@@ -28,7 +28,7 @@ namespace Dissonance.Audio.Playback
         /// </summary>
         private float[] _temp;
 
-        [CanBeNull]private AudioFileWriter _diagnosticOutput;
+        [CanBeNull] private AudioFileWriter _diagnosticOutput;
 
         /// <summary>
         /// Configure this playback component to either overwrite the input audio, or to multiply by it
@@ -164,7 +164,9 @@ namespace Dissonance.Audio.Playback
                 {
                     int samples;
                     float arv;
-                    complete = Filter(session, data, channels, _temp, _diagnosticOutput, out arv, out samples, MultiplyBySource);
+                    var _temp2 = _temp;            
+                    complete = Filter(session, data, channels, _temp, _temp2, _diagnosticOutput, out arv, out samples, MultiplyBySource, CorrectedPlaybackSpeed);
+                    // complete = Filter(session, data, channels, _temp, _diagnosticOutput, out arv, out samples, MultiplyBySource);
                     _arv = arv;
                     Interlocked.Add(ref _totalSamplesRead, samples);
                 }
@@ -247,14 +249,63 @@ namespace Dissonance.Audio.Playback
             return false;
         }
 
-        internal static bool Filter(SpeechSession session, [NotNull] float[] output, int channels, [NotNull] float[] temp, [CanBeNull]AudioFileWriter diagnosticOutput, out float arv, out int samplesRead, bool multiply)
+        internal static bool Filter(SpeechSession session, [NotNull] float[] output, int channels, [NotNull] float[] temp, [NotNull] float[] resamplingBuffer, [CanBeNull] AudioFileWriter diagnosticOutput, out float arv, out int samplesRead, bool multiply, float rate)
         {
             //Read out data from source (exactly as much as we need for one channel)
             var samplesRequired = output.Length / channels;
-            var complete = session.Read(new ArraySegment<float>(temp, 0, samplesRequired));
+            bool complete;
+            if (rate == 1)
+            {
+                //then same as before
+                complete = session.Read(new ArraySegment<float>(temp, 0, samplesRequired));
+                if (diagnosticOutput != null)
+                    diagnosticOutput.WriteSamples(new ArraySegment<float>(temp, 0, samplesRequired));
+            }
+            else
+            {
+                //change pull more or less samples based on rate, and interpolate with the rate scale to stretch/shrink accordingly
+                //without pushing the last frame back into the session pipeline, part of it gets ignored
+                //...but because each sample isn't directly tied to a timestamp, 
+                //and this is pulling them off of, essentially a stack, this partial sample shift/loss can't be avoided in a simple manner
+                var samplesRequiredRateAdjusted = Mathf.CeilToInt(samplesRequired * rate);
+                complete = session.Read(new ArraySegment<float>(resamplingBuffer, 0, samplesRequiredRateAdjusted));
+                if (diagnosticOutput != null)
+                    diagnosticOutput.WriteSamples(new ArraySegment<float>(resamplingBuffer, 0, samplesRequiredRateAdjusted));
 
-            if (diagnosticOutput != null)
-                diagnosticOutput.WriteSamples(new ArraySegment<float>(temp, 0, samplesRequired));
+
+                int readIndex = 0;
+                int writeIndex = 0;
+                float readTimeA, readTimeB;
+                float writeTime;
+                float lerpRatio;
+                readTimeA = readIndex / rate;
+                readTimeB = (readIndex + 1) / rate;
+                //while there is writting to be done...
+                while (writeIndex < samplesRequired)
+                {
+                    writeTime = writeIndex;
+                    //whenever the write time leads the read time window, shift the read time window until it surrounds the write time
+                    while (writeTime > readTimeB)
+                    {
+                        readIndex++;
+                        readTimeA = readIndex / rate;
+                        readTimeB = (readIndex + 1) / rate;
+                    }
+                    lerpRatio = (writeTime - readTimeA) * rate;
+                    if (readIndex + 1 >= resamplingBuffer.Length)
+                    {
+                        //this shouldn't really happen, but just in case
+                        Debug.LogError("over pulling resample buffer");
+                    }
+                    float a = resamplingBuffer[readIndex];
+                    float b = resamplingBuffer[readIndex + 1];
+
+                    temp[writeIndex] = Mathf.Lerp(a, b, lerpRatio);
+                    writeIndex++;
+                }
+            }
+            //the rest as usual
+
 
             float accumulator = 0;
 
@@ -283,5 +334,42 @@ namespace Dissonance.Audio.Playback
 
             return complete;
         }
+
+        // internal static bool Filter(SpeechSession session, [NotNull] float[] output, int channels, [NotNull] float[] temp, [CanBeNull]AudioFileWriter diagnosticOutput, out float arv, out int samplesRead, bool multiply)
+        // {
+        //     //Read out data from source (exactly as much as we need for one channel)
+        //     var samplesRequired = output.Length / channels;
+        //     var complete = session.Read(new ArraySegment<float>(temp, 0, samplesRequired));
+
+        //     if (diagnosticOutput != null)
+        //         diagnosticOutput.WriteSamples(new ArraySegment<float>(temp, 0, samplesRequired));
+
+        //     float accumulator = 0;
+
+        //     //Step through samples, stretching them (i.e. play mono input in all output channels)
+        //     var sampleIndex = 0;
+        //     for (var i = 0; i < output.Length; i += channels)
+        //     {
+        //         //Get a single sample from the source data
+        //         var sample = temp[sampleIndex++];
+
+        //         //Accumulate the sum of the audio signal
+        //         accumulator += Mathf.Abs(sample);
+
+        //         //Copy data into all channels
+        //         for (var c = 0; c < channels; c++)
+        //         {
+        //             if (multiply)
+        //                 output[i + c] *= sample;
+        //             else
+        //                 output[i + c] = sample;
+        //         }
+        //     }
+
+        //     arv = accumulator / output.Length;
+        //     samplesRead = samplesRequired;
+
+        //     return complete;
+        // }
     }
 }

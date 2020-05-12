@@ -79,7 +79,7 @@ MonoBehaviour:
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
-  _tokensExpanded: 0
+  _tokensExpanded: 1
   _ampExpanded: 0
   _activationFaderSettings:
     _volume: 1

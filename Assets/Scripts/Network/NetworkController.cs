@@ -44,7 +44,6 @@ public class NetworkController : MonoBehaviour
         {
             Debug.Log("Connection closed!");
             token = null;
-            Destroy(player);
             var comms = GetComponent<Dissonance.DissonanceComms>();
             if (comms)
             {
@@ -52,6 +51,7 @@ public class NetworkController : MonoBehaviour
             }
             locationPanel.SetActive(false);
             menuPanel.SetActive(true);
+            Destroy(player);
         };
 
         WebSocket.OnMessage += (bytes) =>
