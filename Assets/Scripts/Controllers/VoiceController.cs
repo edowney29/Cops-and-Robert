@@ -32,7 +32,7 @@ public class VoiceController : MonoBehaviour, IDissonancePlayer
             StopTracking();
     }
 
-    public void StartPlayer(string playerName)
+    public void StartVoice(string playerName)
     {
         SetPlayerName(playerName);
     }
