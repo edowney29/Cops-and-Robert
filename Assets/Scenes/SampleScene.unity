@@ -1512,7 +1512,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Orange Half
-  _priority: 0
+  _priority: -2
 --- !u!114 &538033148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2901,7 +2901,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Purple Half
-  _priority: 0
+  _priority: -2
 --- !u!114 &1012202651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4951,7 +4951,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Blue Room
-  _priority: 0
+  _priority: -2
 --- !u!114 &1534971050
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5229,7 +5229,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Red Room
-  _priority: 0
+  _priority: -2
 --- !u!114 &1543000389
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12108,7 +12108,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Cat Room
-  _priority: 0
+  _priority: -2
 --- !u!114 &6307229909437270873
 MonoBehaviour:
   m_ObjectHideFlags: 0
