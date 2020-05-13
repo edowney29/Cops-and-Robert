@@ -79,7 +79,7 @@ MonoBehaviour:
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
-  _tokensExpanded: 1
+  _tokensExpanded: 0
   _ampExpanded: 0
   _activationFaderSettings:
     _volume: 1
@@ -90,7 +90,7 @@ MonoBehaviour:
     _fadeInTicks: 7500000
     _fadeOutTicks: 11500000
   _broadcastPosition: 1
-  _channelType: 1
+  _channelType: 2
   _inputName: 
   _mode: 1
   _muted: 0

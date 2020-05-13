@@ -90,9 +90,9 @@ public class NetworkController : MonoBehaviour
                 else
                 {
                     GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.X, packet.Y, packet.Z), Quaternion.Euler(packet.RX, packet.RY, packet.RZ));
-                    obj.name = packet.Token;
+                    // obj.name = packet.Token;
                     obj.GetComponent<VoiceController>().StartVoice(packet.Token);
-                    obj.GetComponent<Dissonance.VoiceBroadcastTrigger>().PlayerId = packet.Token;
+                    // obj.GetComponent<Dissonance.VoiceBroadcastTrigger>().PlayerId = packet.Token;
                     otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
                 }
             }
@@ -127,7 +127,7 @@ public class NetworkController : MonoBehaviour
         comms.LocalPlayerName = token;
         comms.enabled = true;
         player = Instantiate(prefabPlayer);
-        player.name = token;
+        // player.name = token;
         player.GetComponent<VoiceController>().StartVoice(token);
         locationPanel.SetActive(true);
         menuPanel.SetActive(false);
