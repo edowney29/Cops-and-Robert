@@ -72,27 +72,28 @@ public class NetworkController : MonoBehaviour
             // foreach (string json in Regex.Replace(jsonHolder, "/(\r\n)|\n|\r/gm", "|").Split('|'))
             // foreach (string json in jsonHolder.Split('|'))
             // {
-            if (json.Equals("isServer"))
+            if (json.Contains(token))
+            {
+                // Skip this shit
+            }
+            else if (json.Equals("isServer"))
             {
                 isServer = true;
             }
             else if (json.Contains("Username"))
             {
                 PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
-                if (packet.Token != playerJson.Token)
+                if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
-                    {
-                        oc.UpdateTransform(packet);
-                    }
-                    else
-                    {
-                        GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.X, packet.Y, packet.Z), Quaternion.Euler(packet.RX, packet.RY, packet.RZ));
-                        obj.name = packet.Token;
-                        obj.GetComponent<VoiceController>().StartVoice(packet.Token);
-                        obj.GetComponent<Dissonance.VoiceBroadcastTrigger>().PlayerId = packet.Token;
-                        otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
-                    }
+                    oc.UpdateTransform(packet);
+                }
+                else
+                {
+                    GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.X, packet.Y, packet.Z), Quaternion.Euler(packet.RX, packet.RY, packet.RZ));
+                    obj.name = packet.Token;
+                    obj.GetComponent<VoiceController>().StartVoice(packet.Token);
+                    obj.GetComponent<Dissonance.VoiceBroadcastTrigger>().PlayerId = packet.Token;
+                    otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
                 }
             }
             else
@@ -102,17 +103,13 @@ public class NetworkController : MonoBehaviour
                 {
                     voiceHolderServer.Add(packet);
                 }
-                else if (!isServer && packet.IsServer)
-                {
-                    voiceHolderClient.Add(packet);
-                }
-                else if (isServer && packet.IsServer)
+                else if (packet.IsServer || packet.IsP2P)
                 {
                     voiceHolderClient.Add(packet);
                 }
                 else
                 {
-                    // voiceHolderServer.Add(packet);
+                    Debug.Log("Unknown voice packet");
                 }
             }
             // }

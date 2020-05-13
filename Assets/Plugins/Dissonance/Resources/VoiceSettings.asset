@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: VoiceSettings
   m_EditorClassIdentifier: 
   _quality: 2
-  _frameSize: 0
+  _frameSize: 2
   _forwardErrorCorrection: 1
   _denoiseAmount: 2
   _vadSensitivity: 1

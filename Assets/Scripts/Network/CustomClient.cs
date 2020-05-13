@@ -46,8 +46,8 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
     private void SendReliableP2P(IList<ClientInfo<CustomConn?>> destinations, ArraySegment<byte> packet)
     {
-        SendPacket(connection, packet.Array, false, true);
         destinations.Clear();
+        SendPacket(connection, packet.Array, false, true);
         base.SendReliableP2P((List<ClientInfo<CustomConn?>>)destinations, packet);
     }
 
@@ -62,12 +62,11 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
         // Remove all the ones we can send to from the input list
         // destinations.RemoveAll(dests);
+        destinations.Clear();
 
         // Send the packets to the list of destinations through PUN
         // _network.Send(packet, dests, reliable: false);
-
         SendPacket(connection, packet.Array, false, true);
-        destinations.Clear();
 
         // Call base to do server relay for all the peers we don't
         // know how to contact
@@ -80,13 +79,12 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
         // Create the handshake packet to send
         var packet = new ArraySegment<byte>(WriteHandshakeP2P(session, id));
+        SendPacket(connection, packet.Array, false, true);
 
         // Send this to everyone else in the session through PUN
         // _network.Send(packet, _network.EventCodeToClient, new RaiseEventOptions {
         //     Receivers = ReceiverGroup.Others,
         // }, true);
-
-        SendPacket(connection, packet.Array, false, true);
     }
 
     public override void Disconnect()
