@@ -50,7 +50,7 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
     // We specified `Unit` as `TServerParam`, so we get given a `Unit`
     protected override CustomServer CreateServer(Unit details)
     {
-        return new CustomServer(this, networkController);
+        return new CustomServer(networkController);
     }
 
     // We specified `Unit` as `TClientParam`, so we get given a `Unit`

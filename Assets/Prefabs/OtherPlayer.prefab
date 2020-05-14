@@ -79,7 +79,7 @@ MonoBehaviour:
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
-  _tokensExpanded: 0
+  _tokensExpanded: 1
   _ampExpanded: 0
   _activationFaderSettings:
     _volume: 1
@@ -97,7 +97,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: 
-  _priority: -2
+  _priority: 1
 --- !u!135 &6587311617936904570
 SphereCollider:
   m_ObjectHideFlags: 0

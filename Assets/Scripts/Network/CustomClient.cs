@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 {
     private readonly NetworkController networkController;
-    private CustomConn connection = new CustomConn();
+    private CustomConn conn = new CustomConn();
 
     public CustomClient(CustomCommsNetwork network, NetworkController networkController) : base(network)
     {
@@ -16,7 +16,7 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
     {
         if (networkController.WebSocket.State == NativeWebSocket.WebSocketState.Open && networkController.token != null)
         {
-            connection.id = networkController.token;
+            conn.id = networkController.token;
             base.Connected();
         }
     }
@@ -36,18 +36,18 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
     protected override void SendReliable(ArraySegment<byte> packet)
     {
-        SendPacket(connection, packet.Array, false, false);
+        SendPacket(conn, packet.Array, false, false);
     }
 
     protected override void SendUnreliable(ArraySegment<byte> packet)
     {
-        SendPacket(connection, packet.Array, false, false);
+        SendPacket(conn, packet.Array, false, false);
     }
 
     private void SendReliableP2P(IList<ClientInfo<CustomConn?>> destinations, ArraySegment<byte> packet)
     {
         destinations.Clear();
-        SendPacket(connection, packet.Array, false, true);
+        SendPacket(conn, packet.Array, false, true);
         base.SendReliableP2P((List<ClientInfo<CustomConn?>>)destinations, packet);
     }
 
@@ -59,6 +59,7 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
         // foreach (var item in destinations)
         //     if (item.Connection.HasValue)
         //         dests.Add(item.Connection);
+        SendPacket(conn, packet.Array, false, true);
 
         // Remove all the ones we can send to from the input list
         // destinations.RemoveAll(dests);
@@ -66,7 +67,6 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
         // Send the packets to the list of destinations through PUN
         // _network.Send(packet, dests, reliable: false);
-        SendPacket(connection, packet.Array, false, true);
 
         // Call base to do server relay for all the peers we don't
         // know how to contact
@@ -78,8 +78,8 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
         base.OnServerAssignedSessionId(session, id);
 
         // Create the handshake packet to send
-        var packet = new ArraySegment<byte>(WriteHandshakeP2P(session, id));
-        SendPacket(connection, packet.Array, false, true);
+        // var packet = new ArraySegment<byte>(WriteHandshakeP2P(session, id));
+        // SendPacket(conn, packet.Array, false, true);
 
         // Send this to everyone else in the session through PUN
         // _network.Send(packet, _network.EventCodeToClient, new RaiseEventOptions {
@@ -94,6 +94,7 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
     void SendPacket(CustomConn conn, byte[] data, bool isServer, bool isP2P)
     {
+        // UnityEngine.Debug.Log("SEND: " + conn.id + " - " + isServer + " - " + isP2P);
         var obj = new VoicePacket
         {
             Conn = conn,

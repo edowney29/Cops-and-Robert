@@ -68,21 +68,20 @@ public class NetworkController : MonoBehaviour
         WebSocket.OnMessage += (bytes) =>
         {
             string json = Encoding.UTF8.GetString(bytes);
+            Debug.Log(json);
             // foreach (string json in jsonHolder.Replace("\n", string.Empty).Replace("\r", string.Empty).Replace("}{", "}|{").Split('|'))
             // foreach (string json in Regex.Replace(jsonHolder, "/(\r\n)|\n|\r/gm", "|").Split('|'))
             // foreach (string json in jsonHolder.Split('|'))
             // {
-            if (json.Contains(token))
-            {
-                // Skip this shit
-            }
-            else if (json.Equals("isServer"))
+
+            if (json.Equals("isServer"))
             {
                 isServer = true;
             }
             else if (json.Contains("Username"))
             {
                 PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
+                if (packet.Token.Equals(token)) return;
                 if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
                     oc.UpdateTransform(packet);
@@ -99,12 +98,15 @@ public class NetworkController : MonoBehaviour
             else
             {
                 VoicePacket packet = JsonConvert.DeserializeObject<VoicePacket>(json);
+                if (packet.Conn.id.Equals(token) && !isServer) return; // As server from my own client can pass
                 if (isServer && !packet.IsServer && !packet.IsP2P)
                 {
+                    Debug.Log("SERVER: " + packet.Conn.id + " - " + packet.IsServer + " - " + packet.IsP2P);
                     voiceHolderServer.Add(packet);
                 }
                 else if (packet.IsServer || packet.IsP2P)
                 {
+                    Debug.Log("CLIENT: " + packet.Conn.id + " - " + packet.IsServer + " - " + packet.IsP2P);
                     voiceHolderClient.Add(packet);
                 }
                 else
