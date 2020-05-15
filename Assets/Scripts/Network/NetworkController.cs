@@ -18,16 +18,16 @@ public class NetworkController : MonoBehaviour
 
     string roomId;
     GameObject player;
-    Dissonance.DissonanceComms comms;
     PlayerJSON playerJson = new PlayerJSON();
     Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
-
     public List<VoicePacket> voiceHolderClient = new List<VoicePacket>();
     public List<VoicePacket> voiceHolderServer = new List<VoicePacket>();
 
+    public Dissonance.DissonanceComms comms { get; private set; }
     public WebSocket WebSocket { get; private set; }
-    public bool IsServer { get; private set; }
     public string Token { get; private set; }
+    public bool IsServer { get; private set; }
+    public string ServerToken { get; private set; }
 
     void Start()
     {
@@ -78,7 +78,7 @@ public class NetworkController : MonoBehaviour
             if (!json.Contains("Data"))
             {
                 PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
-                if (packet.Token.Equals(Token)) return; // Case where this is server also
+                if (packet.Token.Equals(Token)) return;
                 if (Token == null)
                 {
                     Token = packet.Token;
@@ -104,15 +104,15 @@ public class NetworkController : MonoBehaviour
             else
             {
                 VoicePacket packet = JsonConvert.DeserializeObject<VoicePacket>(json);
-                // if (IsServer && packet.IsServer) return;
+                if (packet.IsServer) ServerToken = packet.Token;
                 if (IsServer && !packet.IsServer && !packet.IsP2P)
                 {
-                    Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P);
+                    Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
                     voiceHolderServer.Add(packet);
                 }
                 else if (packet.IsServer || packet.IsP2P)
                 {
-                    Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P);
+                    Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
                     voiceHolderClient.Add(packet);
                 }
                 else

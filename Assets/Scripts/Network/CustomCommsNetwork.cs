@@ -6,9 +6,12 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
 {
     NetworkController networkController;
 
-    void Start()
+    protected override void Initialize()
     {
         networkController = GetComponent<NetworkController>();
+
+        // Don't forget to call base.Initialize!   
+        base.Initialize();
     }
 
     // Check every frame

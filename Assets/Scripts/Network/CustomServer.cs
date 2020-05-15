@@ -35,21 +35,22 @@ public class CustomServer : BaseServer<CustomServer, CustomClient, CustomConn>
 
     void SendPacket(CustomConn conn, byte[] data)
     {
-        var obj = new VoicePacket
+        var packet = new VoicePacket
         {
+            Dest = conn.token,
             IsP2P = false,
             Data = data,
         };
 
-        if (conn.token.Equals(networkController.Token))
-        {            
-            obj.Token = conn.token;
-            networkController.voiceHolderClient.Add(obj);
-        }
-        else
-        {
-            string json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-            networkController.WebSocket.SendText(json);
-        }
+        // if (conn.token.Equals(networkController.Token))
+        // {
+        //     packet.Token = conn.token;
+        //     networkController.voiceHolderClient.Add(packet);
+        // }
+        // else
+        // {
+        string json = Newtonsoft.Json.JsonConvert.SerializeObject(packet);
+        networkController.WebSocket.SendText(json);
+        // }
     }
 }
