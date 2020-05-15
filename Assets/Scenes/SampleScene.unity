@@ -2814,10 +2814,6 @@ MonoBehaviour:
   usernameInput: {fileID: 1264395702}
   passwordInput: {fileID: 1211319570}
   locationText: {fileID: 2129301403}
-  token: 
-  username: 
-  roomId: 
-  isServer: 0
 --- !u!4 &946511667
 Transform:
   m_ObjectHideFlags: 0
@@ -7160,8 +7156,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 946511666}
-        m_MethodName: SpawnPlayer
-        m_Mode: 6
+        m_MethodName: StartWebSocket
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -7480,7 +7476,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &4774059300319291542
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -19,7 +19,7 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
             if (networkController.WebSocket.State == NativeWebSocket.WebSocketState.Open)
             {
                 bool client = true;
-                bool server = networkController.isServer;
+                bool server = networkController.IsServer;
                 // Check what mode Dissonance is in and if they're different then call the correct method
                 if (Mode.IsServerEnabled() != server || Mode.IsClientEnabled() != client)
                 {
@@ -62,10 +62,10 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
 
 public struct CustomConn : IEquatable<CustomConn>
 {
-    public string id;
+    public string token;
 
     public bool Equals(CustomConn other)
     {
-        return this.id == other.id;
+        return this.token.Equals(other.token);
     }
 }

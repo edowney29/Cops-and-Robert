@@ -51,12 +51,12 @@ public class OtherController : MonoBehaviour
     public void UpdateTransform(PlayerPacket packet)
     {
         username = packet.Username;
-        position.x = packet.X;
-        position.y = packet.Y;
-        position.z = packet.Z;
-        rotation.x = packet.RX;
-        rotation.y = packet.RY;
-        rotation.z = packet.RZ;
+        position.x = packet.PosX;
+        position.y = packet.PosY;
+        position.z = packet.PosZ;
+        rotation.x = packet.RotX;
+        rotation.y = packet.RotY;
+        rotation.z = packet.RotZ;
         destroyTimer = 0f;
     }
 }

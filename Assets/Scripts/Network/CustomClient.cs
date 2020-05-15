@@ -14,9 +14,9 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
     public override void Connect()
     {
-        if (networkController.WebSocket.State == NativeWebSocket.WebSocketState.Open && networkController.token != null)
+        if (networkController.WebSocket.State == NativeWebSocket.WebSocketState.Open && networkController.Token != null)
         {
-            conn.id = networkController.token;
+            conn.token = networkController.Token;
             base.Connected();
         }
     }
@@ -26,65 +26,47 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
         networkController.voiceHolderClient.ForEach(voice =>
         {
             var id = base.NetworkReceivedPacket(new ArraySegment<byte>(voice.Data));
-            // If the value is not null
-            // pass to handshake method with the `senderid` of this packet
             if (id.HasValue)
-                ReceiveHandshakeP2P(id.Value, voice.Conn);
+            {
+                CustomConn _conn = new CustomConn()
+                {
+                    token = voice.Token
+                };
+                ReceiveHandshakeP2P(id.Value, _conn);
+            }
         });
         networkController.voiceHolderClient.Clear();
     }
 
     protected override void SendReliable(ArraySegment<byte> packet)
     {
-        SendPacket(conn, packet.Array, false, false);
+        SendPacket(packet.Array, false);
     }
 
     protected override void SendUnreliable(ArraySegment<byte> packet)
     {
-        SendPacket(conn, packet.Array, false, false);
+        SendPacket(packet.Array, false);
     }
 
     private void SendReliableP2P(IList<ClientInfo<CustomConn?>> destinations, ArraySegment<byte> packet)
     {
+        SendPacket(packet.Array, true);
         destinations.Clear();
-        SendPacket(conn, packet.Array, false, true);
         base.SendReliableP2P((List<ClientInfo<CustomConn?>>)destinations, packet);
     }
 
     private void SendUnreliableP2P(IList<ClientInfo<CustomConn?>> destinations, ArraySegment<byte> packet)
     {
-        // Build a list of destinations we know how to send to
-        // i.e. have a non-null Connection object
-        // var dests = new List<CustomConn>();
-        // foreach (var item in destinations)
-        //     if (item.Connection.HasValue)
-        //         dests.Add(item.Connection);
-        SendPacket(conn, packet.Array, false, true);
-
-        // Remove all the ones we can send to from the input list
-        // destinations.RemoveAll(dests);
+        SendPacket(packet.Array, true);
         destinations.Clear();
-
-        // Send the packets to the list of destinations through PUN
-        // _network.Send(packet, dests, reliable: false);
-
-        // Call base to do server relay for all the peers we don't
-        // know how to contact
         base.SendUnreliableP2P((List<ClientInfo<CustomConn?>>)destinations, packet);
     }
 
     protected override void OnServerAssignedSessionId(uint session, ushort id)
     {
         base.OnServerAssignedSessionId(session, id);
-
-        // Create the handshake packet to send
-        // var packet = new ArraySegment<byte>(WriteHandshakeP2P(session, id));
-        // SendPacket(conn, packet.Array, false, true);
-
-        // Send this to everyone else in the session through PUN
-        // _network.Send(packet, _network.EventCodeToClient, new RaiseEventOptions {
-        //     Receivers = ReceiverGroup.Others,
-        // }, true);
+        var packet = new ArraySegment<byte>(WriteHandshakeP2P(session, id));
+        SendPacket(packet.Array, true);
     }
 
     public override void Disconnect()
@@ -92,17 +74,23 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
         base.Disconnect();
     }
 
-    void SendPacket(CustomConn conn, byte[] data, bool isServer, bool isP2P)
+    void SendPacket(byte[] data, bool isP2P)
     {
-        // UnityEngine.Debug.Log("SEND: " + conn.id + " - " + isServer + " - " + isP2P);
         var obj = new VoicePacket
         {
-            Conn = conn,
-            IsServer = isServer,
             IsP2P = isP2P,
             Data = data,
         };
-        string json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        networkController.WebSocket.SendText(json);
+
+        if (conn.token.Equals(networkController.Token))
+        {
+            obj.Token = conn.token;
+            networkController.voiceHolderServer.Add(obj);
+        }
+        else
+        {
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            networkController.WebSocket.SendText(json);
+        }
     }
 }
