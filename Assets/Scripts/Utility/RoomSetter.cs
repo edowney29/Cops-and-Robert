@@ -17,27 +17,19 @@ public class RoomSetter : MonoBehaviour
         if (other.gameObject.tag.Equals("Player"))
         {
             networkController.SetLocation(roomName);
-            var vbt = other.gameObject.GetComponent<Dissonance.VoiceBroadcastTrigger>();
-            if (vbt)
-            {
-                vbt.RoomName = roomName;
-                vbt.enabled = true;
-            }
+            // networkController.comms.AddToken(token);
+            networkController.comms.RemoveToken("ayy");
         }
     }
 
     // When the Primitive exits the collision, it will change Color
     private void OnTriggerExit(Collider other)
     {
-        if (other.gameObject.tag.Equals("Player"))
+          if (other.gameObject.tag.Equals("Player"))
         {
             networkController.SetLocation("Proximity");
-            var vbt = other.gameObject.GetComponent<Dissonance.VoiceBroadcastTrigger>();
-            if (vbt)
-            {
-                vbt.RoomName = "Global";
-                vbt.enabled = false;
-            }
+            networkController.comms.AddToken("ayy");
+            // networkController.comms.RemoveToken(token);
         }
     }
 }

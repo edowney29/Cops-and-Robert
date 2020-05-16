@@ -84,7 +84,8 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
         };
 
         // For when client is also server loopback
-        if (networkController.IsServer && !networkController.comms.IsNetworkInitialized)
+        // if (networkController.IsServer && !networkController.comms.IsNetworkInitialized)
+        if (networkController.IsServer)
         {
             packet.Token = networkController.Token;
             networkController.voiceHolderServer.Add(packet);
