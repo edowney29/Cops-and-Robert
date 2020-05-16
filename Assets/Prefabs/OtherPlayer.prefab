@@ -74,8 +74,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - ayy
+    _tokens: []
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
@@ -97,7 +96,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: 
-  _priority: 1
+  _priority: 0
 --- !u!135 &6587311617936904570
 SphereCollider:
   m_ObjectHideFlags: 0

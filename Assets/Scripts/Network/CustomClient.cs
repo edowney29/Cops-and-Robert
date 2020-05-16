@@ -31,8 +31,8 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
                 // {
                 //     token = voice.Token
                 // };
-                conn.token = voice.Token;
-                ReceiveHandshakeP2P(id.Value, conn);
+                // conn.token = voice.Token;
+                // ReceiveHandshakeP2P(id.Value, conn);
             }
         });
         networkController.voiceHolderClient.Clear();
@@ -65,8 +65,8 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
     protected override void OnServerAssignedSessionId(uint session, ushort id)
     {
         base.OnServerAssignedSessionId(session, id);
-        var packet = new ArraySegment<byte>(WriteHandshakeP2P(session, id));
-        SendPacket(packet.Array, true);
+        // var packet = new ArraySegment<byte>(WriteHandshakeP2P(session, id));
+        // SendPacket(packet.Array, true);
     }
 
     public override void Disconnect()

@@ -1628,8 +1628,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - orange
+    _tokens: []
   _roomName: Orange Half
   _useTrigger: 1
 --- !u!114 &538033147
@@ -1639,14 +1638,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 538033140}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a066ddbf125f9546bcadc947418566b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - orange
+    _tokens: []
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
@@ -1668,7 +1666,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Orange Half
-  _priority: -2
+  _priority: 1
 --- !u!114 &538033148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2749,8 +2747,6 @@ GameObject:
   - component: {fileID: 946511666}
   - component: {fileID: 946511665}
   - component: {fileID: 946511664}
-  - component: {fileID: 946511669}
-  - component: {fileID: 946511668}
   m_Layer: 0
   m_Name: Network
   m_TagString: Untagged
@@ -2791,8 +2787,7 @@ MonoBehaviour:
   _micName: 
   _playerPriority: 0
   _tokens:
-    _tokens:
-    - ayy
+    _tokens: []
 --- !u!114 &946511666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2828,58 +2823,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &946511668
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 946511663}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3737438748cf23f448d18cd2c6192e95, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _tokens:
-    _tokens: []
-  _roomName: Global
-  _useTrigger: 0
---- !u!114 &946511669
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 946511663}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a066ddbf125f9546bcadc947418566b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _tokens:
-    _tokens: []
-  _channelTypeExpanded: 0
-  _metadataExpanded: 0
-  _activationModeExpanded: 0
-  _tokensExpanded: 0
-  _ampExpanded: 0
-  _activationFaderSettings:
-    _volume: 1
-    _fadeInTicks: 0
-    _fadeOutTicks: 1500000
-  _triggerFaderSettings:
-    _volume: 1
-    _fadeInTicks: 7500000
-    _fadeOutTicks: 11500000
-  _broadcastPosition: 0
-  _channelType: 0
-  _inputName: 
-  _mode: 1
-  _muted: 0
-  _playerId: 
-  _useTrigger: 0
-  _roomName: Global
-  _priority: -2
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -3014,8 +2957,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - purple
+    _tokens: []
   _roomName: Purple Half
   _useTrigger: 1
 --- !u!114 &1012202650
@@ -3025,14 +2967,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1012202643}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a066ddbf125f9546bcadc947418566b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - purple
+    _tokens: []
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
@@ -3054,7 +2995,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Purple Half
-  _priority: -2
+  _priority: 1
 --- !u!114 &1012202651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5287,8 +5228,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - blue
+    _tokens: []
   _roomName: Blue Room
   _useTrigger: 1
 --- !u!114 &1534971049
@@ -5298,14 +5238,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1534971042}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a066ddbf125f9546bcadc947418566b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - blue
+    _tokens: []
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
@@ -5327,7 +5266,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Blue Room
-  _priority: -2
+  _priority: 1
 --- !u!114 &1534971050
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5565,8 +5504,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - red
+    _tokens: []
   _roomName: Red Room
   _useTrigger: 1
 --- !u!114 &1543000388
@@ -5576,14 +5514,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1543000381}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a066ddbf125f9546bcadc947418566b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - red
+    _tokens: []
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
@@ -5605,7 +5542,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Red Room
-  _priority: -2
+  _priority: 1
 --- !u!114 &1543000389
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12600,8 +12537,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - cat
+    _tokens: []
   _roomName: Cat Room
   _useTrigger: 1
 --- !u!114 &6307229909437270872
@@ -12611,14 +12547,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6307229909437270867}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a066ddbf125f9546bcadc947418566b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _tokens:
-    _tokens:
-    - cat
+    _tokens: []
   _channelTypeExpanded: 1
   _metadataExpanded: 0
   _activationModeExpanded: 0
@@ -12640,7 +12575,7 @@ MonoBehaviour:
   _playerId: 
   _useTrigger: 1
   _roomName: Cat Room
-  _priority: -2
+  _priority: 1
 --- !u!114 &6307229909437270873
 MonoBehaviour:
   m_ObjectHideFlags: 0

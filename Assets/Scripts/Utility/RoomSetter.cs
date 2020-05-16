@@ -4,44 +4,40 @@ public class RoomSetter : MonoBehaviour
 {
     [SerializeField]
     string token, roomName;
+    NetworkController networkController;
 
-    //When the Primitive collides with the walls, it will reverse direction
+    void Start()
+    {
+        networkController = FindObjectOfType<NetworkController>();
+    }
+
+    // When the Primitive collides with the walls, it will reverse direction
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag.Equals("Player"))
         {
-            var comms = FindObjectOfType<Dissonance.DissonanceComms>();
-            if (comms)
+            networkController.SetLocation(roomName);
+            var vbt = other.gameObject.GetComponent<Dissonance.VoiceBroadcastTrigger>();
+            if (vbt)
             {
-                comms.RemoveToken("ayy");
-                comms.AddToken(token);
-            }
-
-            var network = FindObjectOfType<NetworkController>();
-            if (network)
-            {
-                network.SetLocation(roomName);
+                vbt.RoomName = roomName;
+                vbt.enabled = true;
             }
         }
     }
 
-    //When the Primitive exits the collision, it will change Color
+    // When the Primitive exits the collision, it will change Color
     private void OnTriggerExit(Collider other)
     {
         if (other.gameObject.tag.Equals("Player"))
         {
-            var comms = FindObjectOfType<Dissonance.DissonanceComms>();
-            if (comms)
+            networkController.SetLocation("Proximity");
+            var vbt = other.gameObject.GetComponent<Dissonance.VoiceBroadcastTrigger>();
+            if (vbt)
             {
-                comms.AddToken("ayy");
-                comms.RemoveToken(token);
+                vbt.RoomName = "Global";
+                vbt.enabled = false;
             }
-        }
-
-        var network = FindObjectOfType<NetworkController>();
-        if (network)
-        {
-            network.SetLocation("Proximity");
         }
     }
 }
