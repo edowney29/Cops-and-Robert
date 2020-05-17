@@ -1,105 +1,207 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    NetworkManager networkManager;
+    float globalTimer = 0f;
+    int globalExports = 0;
 
-    public Dictionary<string, Crate> cratesList = new Dictionary<string, Crate>();
+    // public string id;
+
+    public Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
 
     void Start()
     {
-        networkManager = GetComponent<NetworkManager>();
 
-        var crates = GameObject.FindGameObjectsWithTag("Crates");
-        foreach (var _crate in crates)
-        {
-            string id = System.Guid.NewGuid().ToString();
-            Crate crate = new Crate(id, AccessCode.All);
-        }
-
-        var ccrates = GameObject.FindGameObjectsWithTag("CopsCrates");
-        foreach (var _crate in crates)
-        {
-            string id = System.Guid.NewGuid().ToString();
-            Crate crate = new Crate(id, AccessCode.Cops);
-        }
-
-        var rcrates = GameObject.FindGameObjectsWithTag("RobsCrates");
-        foreach (var _crate in crates)
-        {
-            string id = System.Guid.NewGuid().ToString();
-            Crate crate = new Crate(id, AccessCode.Robs);
-        }
     }
 
     void Update()
     {
-
-        var colliders = Physics.OverlapSphere(transform.position, 0.0f);
+        globalTimer += Time.deltaTime;
     }
 
-    public enum AccessCode
-    {
-        All,
-        Cops,
-        Robs
-    }
+    // public void SetId(string _id)
+    // {
+    //     id = _id;
+    // }
 
-    public enum RoleCode
+    public void SetupGameState()
     {
-        _1,
-        _2,
-        _3,
-        _4,
-        _5,
-    }
-
-    public struct PlayerType
-    {
-        public AccessCode accessCode;
-        public RoleCode roleCode;
-    }
-
-    public class Crate
-    {
-        public Crate(string id, AccessCode access)
+        var crates = GameObject.FindGameObjectsWithTag("Crate");
+        foreach (var _crate in crates)
         {
-            Id = id;
-            Access = access;
-            Drugs = 0;
-            Evidence = 0;
+            string id = _crate.GetComponent<CrateSetter>().Id;
+            Crate crate = new Crate(id, AccessCode.All);
+            cratesHolder.Add(id, crate);
         }
 
-        public string Id { get; private set; }
-        public AccessCode Access { get; private set; }
-        public int Drugs
+        var ccrates = GameObject.FindGameObjectsWithTag("Cop Crate");
+        foreach (var _crate in crates)
         {
-            get
-            {
-                return Drugs;
-            }
-            private set
-            {
-                Drugs = value;
-                DrugsChanged(this);
-            }
-        }
-        public int Evidence
-        {
-            get
-            {
-                return Evidence;
-            }
-            private set
-            {
-                Evidence = value;
-                EvidenceChanged(this);
-            }
+            string id = _crate.GetComponent<CrateSetter>().Id;
+            Crate crate = new Crate(id, AccessCode.Cops);
+            cratesHolder.Add(id, crate);
         }
 
-        public event System.Action<Crate> DrugsChanged;
-        public event System.Action<Crate> EvidenceChanged;
+        var rcrates = GameObject.FindGameObjectsWithTag("Rob Crate");
+        foreach (var _crate in crates)
+        {
+            string id = _crate.GetComponent<CrateSetter>().Id;
+            Crate crate = new Crate(id, AccessCode.Robs);
+            cratesHolder.Add(id, crate);
+        }
+    }
+
+    public void UpdateGameState(PlayerPacket packet, OtherController oc)
+    {
+        // ValidateAction(oc.gameObject);
+        if (oc.crateList.Count > 0)
+        {
+            if (cratesHolder.TryGetValue(oc.crateList[oc.crateList.Count - 1], out Crate crate) && cratesHolder.TryGetValue(packet.Token, out Crate player))
+            {
+                var update = crate.DoAction(packet.Action, player.Access);
+                if (update != ActionType.Null)
+                {
+                    player.DoAction(update, player.Access);
+                }
+            }
+        }
+    }
+
+    // bool ValidateAction(GameObject gameObject)
+    // {
+    //     var colliders = Physics.OverlapSphere(gameObject.transform.position, 0.0f);
+    //     return false;
+    // }
+}
+
+public enum AccessCode
+{
+    All,
+    Cops,
+    Robs
+}
+
+public enum RoleCode
+{
+    _1,
+    _2,
+    _3,
+    _4,
+    _5,
+}
+
+public enum StateType
+{
+    Game,
+    Score,
+    Other
+}
+
+public enum ActionType
+{
+    Null,
+    GetDrugs,
+    StoreDrugs,
+    GetEvidence,
+    StoreEvidence,
+    CreateEvidence,
+    DestroyEvidence,
+    CreateWarrant,
+    UseWarrant,
+    CreateJail,
+}
+
+public class Crate
+{
+    public readonly string Id;
+    public readonly AccessCode Access;
+    public int Drugs { get; private set; }
+    public int Evidence { get; private set; }
+
+    public Crate(string id, AccessCode access)
+    {
+        Id = id;
+        Access = access;
+        Evidence = 0;
+        Drugs = 0;
+    }
+
+    public ActionType DoAction(ActionType action, AccessCode otherAccess)
+    {
+        if (otherAccess == Access)
+        {
+            if (action == ActionType.GetDrugs && Drugs > 0)
+            {
+                Drugs -= 1;
+                return ActionType.StoreDrugs;
+            }
+            if (action == ActionType.StoreDrugs && Drugs < 100)
+            {
+                Drugs += 1;
+                DoAction(ActionType.CreateEvidence, otherAccess);
+                return ActionType.GetDrugs;
+            }
+            if (action == ActionType.GetEvidence && Evidence > 0)
+            {
+                Evidence -= 1;
+                return ActionType.StoreEvidence;
+            }
+            if (action == ActionType.StoreEvidence && Evidence < 2)
+            {
+                Evidence += 1;
+                return ActionType.GetEvidence;
+            }
+            if (action == ActionType.CreateEvidence && Evidence < 2)
+            {
+                Evidence += 1;
+                return ActionType.Null;
+            }
+            if (action == ActionType.DestroyEvidence && Evidence > 0)
+            {
+                Evidence -= 1;
+                return ActionType.Null;
+            }
+        }
+        return ActionType.Null;
+    }
+
+    public ActionType DoSkill(ActionType action, AccessCode otherAccess)
+    {
+        // if (otherAccess == Access)
+        // {
+        //     if (action == ActionType.GetDrugs && Drugs > 0)
+        //     {
+        //         Drugs -= 1;
+        //         return ActionType.StoreDrugs;
+        //     }
+        //     if (action == ActionType.StoreDrugs && Drugs < 100)
+        //     {
+        //         Drugs += 1;
+        //         DoAction(ActionType.CreateEvidence, otherAccess);
+        //         return ActionType.GetDrugs;
+        //     }
+        //     if (action == ActionType.GetEvidence && Evidence > 0)
+        //     {
+        //         Evidence -= 1;
+        //         return ActionType.StoreEvidence;
+        //     }
+        //     if (action == ActionType.StoreEvidence && Evidence < 2)
+        //     {
+        //         Evidence += 1;
+        //         return ActionType.GetEvidence;
+        //     }
+        //     if (action == ActionType.CreateEvidence && Evidence < 2)
+        //     {
+        //         Evidence += 1;
+        //         return ActionType.Null;
+        //     }
+        //     if (action == ActionType.DestroyEvidence && Evidence > 0)
+        //     {
+        //         Evidence -= 1;
+        //         return ActionType.Null;
+        //     }
+        // }
+        return ActionType.Null;
     }
 }

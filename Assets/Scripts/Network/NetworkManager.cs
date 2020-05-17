@@ -1,27 +1,22 @@
 ﻿using NativeWebSocket;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public class NetworkManager : MonoBehaviour
 {
     [SerializeField]
-    GameObject prefabPlayer, prefabOtherPlayer, menuPanel, locationPanel;
-    [SerializeField]
-    TMP_InputField usernameInput, passwordInput;
-    [SerializeField]
-    TMP_Text locationText;
-
-    string roomId;
+    GameObject prefabPlayer, prefabOtherPlayer;
     GameObject player;
-    PlayerJson playerJson = new PlayerJson();
-    Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
 
+    PlayerJson playerJson = new PlayerJson();
+    public Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
     public List<PlayerPacket> voiceHolderClient = new List<PlayerPacket>();
     public List<PlayerPacket> voiceHolderServer = new List<PlayerPacket>();
+    public List<PlayerPacket> playerActionHolder = new List<PlayerPacket>();
 
+    public GameManager gameManager { get; private set; }
+    public InterfaceManager interfaceManager { get; private set; }
     public Dissonance.DissonanceComms comms { get; private set; }
     public WebSocket WebSocket { get; private set; }
     public string Token { get; private set; }
@@ -30,19 +25,16 @@ public class NetworkManager : MonoBehaviour
 
     void Start()
     {
+        gameManager = GetComponent<GameManager>();
+        interfaceManager = GetComponent<InterfaceManager>();
         comms = GetComponent<Dissonance.DissonanceComms>();
-
-        usernameInput.onValueChanged.AddListener(SetUsername);
-        passwordInput.onValueChanged.AddListener(SetRoomId);
-
-        locationPanel.SetActive(false);
 
         InvokeRepeating("SendPlayerJSON", 0f, 0.33333333f);
     }
 
     public async void StartWebSocket()
     {
-        WebSocket = new WebSocket("ws://cops-and-robert-server.herokuapp.com/ws/" + roomId);
+        WebSocket = new WebSocket("ws://cops-and-robert-server.herokuapp.com/ws/" + interfaceManager.RoomId);
 
         WebSocket.OnOpen += () =>
         {
@@ -59,10 +51,9 @@ public class NetworkManager : MonoBehaviour
             Debug.Log("Connection closed!");
             Token = null;
             comms.enabled = false;
-            locationPanel.SetActive(false);
-            menuPanel.SetActive(true);
             Destroy(player);
             Destroy(Camera.main.gameObject);
+            interfaceManager.ShowMenu();
         };
 
         WebSocket.OnMessage += (bytes) =>
@@ -116,6 +107,25 @@ public class NetworkManager : MonoBehaviour
             }
             else if (packet.Type == PacketType.Game)
             {
+                if (IsServer && !packet.IsServer)
+                {
+                    // Consume an action from client
+                    // Check if valid actions
+                    // Send game state to all clients
+                    if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
+                    {
+                        gameManager.UpdateGameState(packet, oc);
+                    }
+                }
+                else if (!IsServer && packet.IsServer)
+                {
+                    // Consume game state
+                    // Update UI
+                }
+                else
+                {
+
+                }
             }
             else
             {
@@ -133,8 +143,7 @@ public class NetworkManager : MonoBehaviour
         player = Instantiate(prefabPlayer);
         // player.name = Token;
         player.GetComponent<VoiceController>().StartVoice(Token);
-        locationPanel.SetActive(true);
-        menuPanel.SetActive(false);
+        interfaceManager.ShowGame();
     }
 
     async void SendPlayerJSON()
@@ -172,21 +181,6 @@ public class NetworkManager : MonoBehaviour
     {
         // enableMic = toggle;
     }
-
-    public void SetUsername(string username)
-    {
-        // this.username = username;
-    }
-
-    public void SetRoomId(string roomId)
-    {
-        this.roomId = roomId;
-    }
-
-    public void SetLocation(string location)
-    {
-        locationText.SetText(location);
-    }
 }
 
 public enum PacketType
@@ -205,7 +199,6 @@ public class PlayerJson
     {
         Type = PacketType.Player;
     }
-
 }
 
 public class VoiceJson
@@ -231,7 +224,8 @@ public class PlayerPacket
     public readonly bool IsServer, IsP2P;
     public readonly float PosX, PosY, PosZ, RotX, RotY, RotZ;
     public readonly byte[] Data;
-    // public string GameState;
+    public readonly ActionType Action;
+    public readonly Crate[] GameState;
 
     public PlayerPacket(string token, byte[] data)
     {

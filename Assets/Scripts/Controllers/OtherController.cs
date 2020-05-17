@@ -1,11 +1,14 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class OtherController : MonoBehaviour
 {
     string username;
     Vector3 position, rotation;
-    float destroyTimer = 0f;
+    float destroyTimer = 0f, waitTime = 0.33f, spinTime = 0.22f;
+
+    public List<string> crateList = new List<string>();
 
     void Start()
     {
@@ -23,7 +26,24 @@ public class OtherController : MonoBehaviour
         position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
         rotation = new Vector3(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
 
-        StartCoroutine("AsyncUpdate", 0.33333333f);
+        InvokeRepeating("AsyncUpdate", 0f, 0.33333333f);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Crate")
+        {
+            crateList.Add(other.gameObject.GetComponent<CrateSetter>().Id);
+        }
+    }
+
+    // When the Primitive exits the collision, it will change Color
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.tag == "Crate")
+        {
+            crateList.Remove(other.gameObject.GetComponent<CrateSetter>().Id);
+        }
     }
 
     void Update()
@@ -37,15 +57,10 @@ public class OtherController : MonoBehaviour
         }
     }
 
-    IEnumerator AsyncUpdate(float waitTime)
+    void AsyncUpdate()
     {
-        float spinTime = waitTime / 1.5f;
-        while (true)
-        {
-            yield return new WaitForSeconds(waitTime); // LAG COMP HERE - LESS OR MORE WAIT?
-            LeanTween.move(gameObject, position, waitTime);
-            LeanTween.rotate(gameObject, rotation, spinTime);
-        }
+        LeanTween.move(gameObject, position, waitTime);
+        LeanTween.rotate(gameObject, rotation, spinTime);
     }
 
     public void UpdateTransform(PlayerPacket packet)
