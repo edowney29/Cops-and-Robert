@@ -1,5 +1,6 @@
 ﻿using NativeWebSocket;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -15,10 +16,11 @@ public class NetworkManager : MonoBehaviour
 
     string roomId;
     GameObject player;
-    PlayerJSON playerJson = new PlayerJSON();
+    PlayerJson playerJson = new PlayerJson();
     Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
-    public List<VoicePacket> voiceHolderClient = new List<VoicePacket>();
-    public List<VoicePacket> voiceHolderServer = new List<VoicePacket>();
+
+    public List<PlayerPacket> voiceHolderClient = new List<PlayerPacket>();
+    public List<PlayerPacket> voiceHolderServer = new List<PlayerPacket>();
 
     public Dissonance.DissonanceComms comms { get; private set; }
     public WebSocket WebSocket { get; private set; }
@@ -36,7 +38,6 @@ public class NetworkManager : MonoBehaviour
         locationPanel.SetActive(false);
 
         InvokeRepeating("SendPlayerJSON", 0f, 0.33333333f);
-        // StartCoroutine("SendPlayerJSON", 0.33333333f);
     }
 
     public async void StartWebSocket()
@@ -67,57 +68,59 @@ public class NetworkManager : MonoBehaviour
         WebSocket.OnMessage += (bytes) =>
         {
             string json = System.Text.Encoding.UTF8.GetString(bytes);
-            // Debug.Log(json);
             // foreach (string json in jsonHolder.Replace("\n", string.Empty).Replace("\r", string.Empty).Replace("}{", "}|{").Split('|'))
             // foreach (string json in Regex.Replace(jsonHolder, "/(\r\n)|\n|\r/gm", "|").Split('|'))
             // foreach (string json in jsonHolder.Split('|'))
-            // {
-            if (!json.Contains("Data"))
+            // {          
+            PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
+            if (packet.IsServer) ServerToken = packet.Token;
+            Debug.Log("[PACKET]: TYPE_" + packet.Type + " --- " + packet.Token + " --- " + packet.IsServer);
+
+            if (Token == null)
             {
-                PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
-                if (packet.Token.Equals(Token)) return;
-                if (Token == null)
+                Token = packet.Token;
+                IsServer = packet.IsServer;
+                // username = packet.Username;
+                SpawnPlayer();
+            }
+            else if (packet.Type == PacketType.Player)
+            {
+                if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    Token = packet.Token;
-                    IsServer = packet.IsServer;
-                    // username = packet.Username;
-                    SpawnPlayer();
+                    oc.UpdateTransform(packet);
                 }
                 else
                 {
-                    if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
-                    {
-                        oc.UpdateTransform(packet);
-                    }
-                    else
-                    {
-                        GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
-                        // obj.name = packet.Token;
-                        obj.GetComponent<VoiceController>().StartVoice(packet.Token);
-                        otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
-                    }
+                    GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
+                    // obj.name = packet.Token;
+                    obj.GetComponent<VoiceController>().StartVoice(packet.Token);
+                    otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
                 }
             }
-            else
+            else if (packet.Type == PacketType.Voice)
             {
-                VoicePacket packet = JsonConvert.DeserializeObject<VoicePacket>(json);
-                if (packet.IsServer) ServerToken = packet.Token;
                 if (IsServer && !packet.IsServer && !packet.IsP2P)
                 {
-                    Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
+                    // Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
                     voiceHolderServer.Add(packet);
                 }
                 else if (packet.IsServer || packet.IsP2P)
                 {
-                    Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
+                    // Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
                     voiceHolderClient.Add(packet);
                 }
                 else
                 {
-                    Debug.Log("Unknown voice packet");
+
                 }
             }
-            // }
+            else if (packet.Type == PacketType.Game)
+            {
+            }
+            else
+            {
+
+            }
         };
 
         await WebSocket.Connect();
@@ -138,9 +141,6 @@ public class NetworkManager : MonoBehaviour
     {
         if (WebSocket != null && player != null && Token != null)
         {
-            // playerJson.Token = token;
-            // playerJson.Username = username;
-            // playerJson.IsServer = isServer;
             playerJson.PosX = player.transform.position.x;
             playerJson.PosY = player.transform.position.y;
             playerJson.PosZ = player.transform.position.z;
@@ -155,30 +155,18 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
-    // IEnumerator SendPlayerJSON(float waitTime)
-    // {
-    //     while (true)
-    //     {
-    //         yield return new WaitForSeconds(waitTime);
-    //         if (WebSocket != null && player != null && token != null && roomId != null)
-    //         {
-    //             if (WebSocket.State == WebSocketState.Open)
-    //             {
-    //                 playerJson.Token = token;
-    //                 playerJson.Username = username;
-    //                 playerJson.IsServer = isServer;
-    //                 playerJson.PosX = player.transform.position.x;
-    //                 playerJson.PosY = player.transform.position.y;
-    //                 playerJson.PosZ = player.transform.position.z;
-    //                 playerJson.RotX = player.transform.rotation.eulerAngles.x;
-    //                 playerJson.RotY = player.transform.rotation.eulerAngles.y;
-    //                 playerJson.RotZ = player.transform.rotation.eulerAngles.z;
-    //                 string json = JsonConvert.SerializeObject(playerJson);
-    //                 WebSocket.SendText(json);
-    //             }
-    //         }
-    //     }
-    // }
+    async void SendGameJSON()
+    {
+        if (WebSocket != null)
+        {
+
+            if (WebSocket.State == WebSocketState.Open)
+            {
+                string json = JsonConvert.SerializeObject(playerJson);
+                await WebSocket.SendText(json);
+            }
+        }
+    }
 
     public void ToggleMic(bool toggle)
     {
@@ -201,44 +189,53 @@ public class NetworkManager : MonoBehaviour
     }
 }
 
-struct PlayerJSON
+public enum PacketType
 {
-    // public string Token { get; set; }
-    // public bool IsServer { get; set; }
-    // public string Username { get; set; }
-    public float PosX { get; set; }
-    public float PosY { get; set; }
-    public float PosZ { get; set; }
-    public float RotX { get; set; }
-    public float RotY { get; set; }
-    public float RotZ { get; set; }
+    Player,
+    Voice,
+    Game,
+}
+
+public class PlayerJson
+{
+    public readonly PacketType Type;
+    public float PosX, PosY, PosZ, RotX, RotY, RotZ;
+
+    public PlayerJson()
+    {
+        Type = PacketType.Player;
+    }
+
+}
+
+public class VoiceJson
+{
+    public readonly PacketType Type;
+    public readonly string Dest;
+    public readonly byte[] Data;
+    public readonly bool IsP2P;
+
+    public VoiceJson(string dest, byte[] data, bool isP2P)
+    {
+        Type = PacketType.Voice;
+        Dest = dest;
+        Data = data;
+        IsP2P = isP2P;
+    }
 }
 
 public class PlayerPacket
 {
-    public string Token { get; set; } // Server-side
-    public string Username { get; set; } // Server-side
-    public bool IsServer { get; set; } // Server-side
-    public string Dest { get; set; }
-    public float PosX { get; set; }
-    public float PosY { get; set; }
-    public float PosZ { get; set; }
-    public float RotX { get; set; }
-    public float RotY { get; set; }
-    public float RotZ { get; set; }
-}
+    public readonly PacketType Type;
+    public readonly string Token, Username, Dest;
+    public readonly bool IsServer, IsP2P;
+    public readonly float PosX, PosY, PosZ, RotX, RotY, RotZ;
+    public readonly byte[] Data;
+    // public string GameState;
 
-public class VoicePacket
-{
-    public string Token { get; set; } // Server-side
-    public string Username { get; set; } // Server-side
-    public bool IsServer { get; set; } // Server-side
-    public string Dest { get; set; }
-    public byte[] Data { get; set; }
-    public bool IsP2P { get; set; }
-}
-
-public class GamePacket
-{
-
+    public PlayerPacket(string token, byte[] data)
+    {
+        Token = token;
+        Data = data;
+    }
 }

@@ -74,26 +74,20 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
         base.Disconnect();
     }
 
-    void SendPacket(byte[] data, bool isP2P)
+    async void SendPacket(byte[] data, bool isP2P)
     {
-        var packet = new VoicePacket
-        {
-            Dest = isP2P ? "" : networkManager.ServerToken,
-            IsP2P = isP2P,
-            Data = data,
-        };
 
         // For when client is also server loopback
-        // if (networkManager.IsServer && !networkManager.comms.IsNetworkInitialized)
         if (networkManager.IsServer)
         {
-            packet.Token = networkManager.Token;
+            var packet = new PlayerPacket(networkManager.Token, data);
             networkManager.voiceHolderServer.Add(packet);
         }
         else
         {
+            var packet = new VoiceJson(isP2P ? "" : networkManager.ServerToken, data, isP2P);
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(packet);
-            networkManager.WebSocket.SendText(json);
+            await networkManager.WebSocket.SendText(json);
         }
     }
 }
