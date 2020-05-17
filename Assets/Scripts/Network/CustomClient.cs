@@ -4,17 +4,17 @@ using System.Collections.Generic;
 
 public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 {
-    private readonly NetworkController networkController;
+    private readonly NetworkManager networkManager;
     CustomConn conn = new CustomConn();
 
-    public CustomClient(CustomCommsNetwork network, NetworkController networkController) : base(network)
+    public CustomClient(CustomCommsNetwork network, NetworkManager networkManager) : base(network)
     {
-        this.networkController = networkController;
+        this.networkManager = networkManager;
     }
 
     public override void Connect()
     {
-        if (networkController.WebSocket.State == NativeWebSocket.WebSocketState.Open)
+        if (networkManager.WebSocket.State == NativeWebSocket.WebSocketState.Open)
         {
             base.Connected();
         }
@@ -22,7 +22,7 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
     protected override void ReadMessages()
     {
-        networkController.voiceHolderClient.ForEach(voice =>
+        networkManager.voiceHolderClient.ForEach(voice =>
         {
             var id = base.NetworkReceivedPacket(new ArraySegment<byte>(voice.Data));
             if (id.HasValue)
@@ -35,7 +35,7 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
                 // ReceiveHandshakeP2P(id.Value, conn);
             }
         });
-        networkController.voiceHolderClient.Clear();
+        networkManager.voiceHolderClient.Clear();
     }
 
     protected override void SendReliable(ArraySegment<byte> packet)
@@ -78,22 +78,22 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
     {
         var packet = new VoicePacket
         {
-            Dest = isP2P ? "" : networkController.ServerToken,
+            Dest = isP2P ? "" : networkManager.ServerToken,
             IsP2P = isP2P,
             Data = data,
         };
 
         // For when client is also server loopback
-        // if (networkController.IsServer && !networkController.comms.IsNetworkInitialized)
-        if (networkController.IsServer)
+        // if (networkManager.IsServer && !networkManager.comms.IsNetworkInitialized)
+        if (networkManager.IsServer)
         {
-            packet.Token = networkController.Token;
-            networkController.voiceHolderServer.Add(packet);
+            packet.Token = networkManager.Token;
+            networkManager.voiceHolderServer.Add(packet);
         }
         else
         {
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(packet);
-            networkController.WebSocket.SendText(json);
+            networkManager.WebSocket.SendText(json);
         }
     }
 }

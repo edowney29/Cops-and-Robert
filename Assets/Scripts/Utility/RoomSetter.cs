@@ -4,11 +4,11 @@ public class RoomSetter : MonoBehaviour
 {
     [SerializeField]
     string token, roomName;
-    NetworkController networkController;
+    NetworkManager networkManager;
 
     void Start()
     {
-        networkController = FindObjectOfType<NetworkController>();
+        networkManager = FindObjectOfType<NetworkManager>();
     }
 
     // When the Primitive collides with the walls, it will reverse direction
@@ -16,9 +16,9 @@ public class RoomSetter : MonoBehaviour
     {
         if (other.gameObject.tag.Equals("Player"))
         {
-            networkController.SetLocation(roomName);
-            // networkController.comms.AddToken(token);
-            networkController.comms.RemoveToken("ayy");
+            networkManager.SetLocation(roomName);
+            // networkManager.comms.AddToken(token);
+            networkManager.comms.RemoveToken("ayy");
         }
     }
 
@@ -27,9 +27,9 @@ public class RoomSetter : MonoBehaviour
     {
           if (other.gameObject.tag.Equals("Player"))
         {
-            networkController.SetLocation("Proximity");
-            networkController.comms.AddToken("ayy");
-            // networkController.comms.RemoveToken(token);
+            networkManager.SetLocation("Proximity");
+            networkManager.comms.AddToken("ayy");
+            // networkManager.comms.RemoveToken(token);
         }
     }
 }

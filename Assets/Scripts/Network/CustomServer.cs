@@ -3,16 +3,16 @@ using Dissonance.Networking;
 
 public class CustomServer : BaseServer<CustomServer, CustomClient, CustomConn>
 {
-    NetworkController networkController;
+    NetworkManager networkManager;
 
-    public CustomServer(NetworkController networkController)
+    public CustomServer(NetworkManager networkManager)
     {
-        this.networkController = networkController;
+        this.networkManager = networkManager;
     }
 
     protected override void ReadMessages()
     {
-        networkController.voiceHolderServer.ForEach(voice =>
+        networkManager.voiceHolderServer.ForEach(voice =>
           {
               CustomConn conn = new CustomConn()
               {
@@ -20,7 +20,7 @@ public class CustomServer : BaseServer<CustomServer, CustomClient, CustomConn>
               };
               NetworkReceivedPacket(conn, new ArraySegment<byte>(voice.Data));
           });
-        networkController.voiceHolderServer.Clear();
+        networkManager.voiceHolderServer.Clear();
     }
 
     protected override void SendReliable(CustomConn conn, ArraySegment<byte> packet)
@@ -42,15 +42,15 @@ public class CustomServer : BaseServer<CustomServer, CustomClient, CustomConn>
             Data = data,
         };
 
-        // if (conn.token.Equals(networkController.Token))
+        // if (conn.token.Equals(networkManager.Token))
         // {
         //     packet.Token = conn.token;
-        //     networkController.voiceHolderClient.Add(packet);
+        //     networkManager.voiceHolderClient.Add(packet);
         // }
         // else
         // {
         string json = Newtonsoft.Json.JsonConvert.SerializeObject(packet);
-        networkController.WebSocket.SendText(json);
+        networkManager.WebSocket.SendText(json);
         // }
     }
 }

@@ -4,11 +4,11 @@ using System;
 
 public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, CustomConn, Unit, Unit>
 {
-    NetworkController networkController;
+    NetworkManager networkManager;
 
     protected override void Initialize()
     {
-        networkController = GetComponent<NetworkController>();
+        networkManager = GetComponent<NetworkManager>();
 
         // Don't forget to call base.Initialize!   
         base.Initialize();
@@ -19,10 +19,10 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
     {
         if (IsInitialized)
         {
-            if (networkController.WebSocket.State == NativeWebSocket.WebSocketState.Open)
+            if (networkManager.WebSocket.State == NativeWebSocket.WebSocketState.Open)
             {
                 bool client = true;
-                bool server = networkController.IsServer;
+                bool server = networkManager.IsServer;
                 // Check what mode Dissonance is in and if they're different then call the correct method
                 if (Mode.IsServerEnabled() != server || Mode.IsClientEnabled() != client)
                 {
@@ -53,13 +53,13 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
     // We specified `Unit` as `TServerParam`, so we get given a `Unit`
     protected override CustomServer CreateServer(Unit details)
     {
-        return new CustomServer(networkController);
+        return new CustomServer(networkManager);
     }
 
     // We specified `Unit` as `TClientParam`, so we get given a `Unit`
     protected override CustomClient CreateClient(Unit details)
     {
-        return new CustomClient(this, networkController);
+        return new CustomClient(this, networkManager);
     }
 }
 
