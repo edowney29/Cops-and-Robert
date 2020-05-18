@@ -1,49 +1,21 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class OtherController : MonoBehaviour
 {
     string username;
     Vector3 position, rotation;
-    float destroyTimer = 0f, waitTime = 0.33f, spinTime = 0.22f;
+    float destroyTimer = 0f, waitTime = 0.33333334f, spinTime = 0.22222223f;
 
     public List<string> crateList = new List<string>();
 
     void Start()
     {
-        // GameObject sign = new GameObject("player_label");
-        // sign.transform.rotation = Camera.main.transform.rotation; // Causes the text faces camera.
-        // TextMesh tm = sign.AddComponent<TextMesh>();
-        // tm.text = username;
-        // tm.color = new Color(0.8f, 0.8f, 0.8f);
-        // tm.fontStyle = FontStyle.Bold;
-        // tm.alignment = TextAlignment.Center;
-        // tm.anchor = TextAnchor.MiddleCenter;
-        // tm.characterSize = 0.065f;
-        // tm.fontSize = 60;
-
         position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
         rotation = new Vector3(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
 
-        InvokeRepeating("AsyncUpdate", 0f, 0.33333333f);
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Crate")
-        {
-            crateList.Add(other.gameObject.GetComponent<CrateSetter>().Id);
-        }
-    }
-
-    // When the Primitive exits the collision, it will change Color
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.gameObject.tag == "Crate")
-        {
-            crateList.Remove(other.gameObject.GetComponent<CrateSetter>().Id);
-        }
+        InvokeRepeating("AsyncUpdate", 0f, waitTime);
     }
 
     void Update()
@@ -57,10 +29,26 @@ public class OtherController : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Crate")
+        {
+            crateList.Add(other.gameObject.GetComponent<CrateSetter>().Id);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.tag == "Crate")
+        {
+            crateList.Remove(other.gameObject.GetComponent<CrateSetter>().Id);
+        }
+    }
+
     void AsyncUpdate()
     {
-        LeanTween.move(gameObject, position, waitTime);
-        LeanTween.rotate(gameObject, rotation, spinTime);
+        transform.DOMove(position, waitTime, false);
+        transform.DORotate(rotation, spinTime, RotateMode.Fast);
     }
 
     public void UpdateTransform(PlayerPacket packet)

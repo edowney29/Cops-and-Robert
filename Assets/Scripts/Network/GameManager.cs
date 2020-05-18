@@ -8,11 +8,13 @@ public class GameManager : MonoBehaviour
 
     // public string id;
 
+    InterfaceManager interfaceManager;
+
     public Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
 
     void Start()
     {
-
+        interfaceManager.GetComponent<InterfaceManager>();
     }
 
     void Update()
@@ -52,20 +54,20 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void UpdateGameState(PlayerPacket packet, OtherController oc)
+    public bool UpdateGameState(PlayerPacket packet, OtherController oc)
     {
         // ValidateAction(oc.gameObject);
-        if (oc.crateList.Count > 0)
+        if (oc.crateList.Count == 0) return false;
+        if (cratesHolder.TryGetValue(oc.crateList[oc.crateList.Count - 1], out Crate crate) && cratesHolder.TryGetValue(packet.Token, out Crate player))
         {
-            if (cratesHolder.TryGetValue(oc.crateList[oc.crateList.Count - 1], out Crate crate) && cratesHolder.TryGetValue(packet.Token, out Crate player))
+            var reaction = crate.DoAction(packet.Action, player.Access);
+            if (reaction != ActionType.Null)
             {
-                var update = crate.DoAction(packet.Action, player.Access);
-                if (update != ActionType.Null)
-                {
-                    player.DoAction(update, player.Access);
-                }
+                player.DoAction(reaction, player.Access);
             }
+            return true;
         }
+        return false;
     }
 
     // bool ValidateAction(GameObject gameObject)

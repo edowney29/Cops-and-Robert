@@ -29,7 +29,7 @@ public class NetworkManager : MonoBehaviour
         interfaceManager = GetComponent<InterfaceManager>();
         comms = GetComponent<Dissonance.DissonanceComms>();
 
-        InvokeRepeating("SendPlayerJSON", 0f, 0.33333333f);
+        InvokeRepeating("SendPlayerJSON", 0f, 0.33333334f);
     }
 
     public async void StartWebSocket()
@@ -114,7 +114,10 @@ public class NetworkManager : MonoBehaviour
                     // Send game state to all clients
                     if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                     {
-                        gameManager.UpdateGameState(packet, oc);
+                        if (gameManager.UpdateGameState(packet, oc))
+                        {
+                            // Send updated game state to clients
+                        }
                     }
                 }
                 else if (!IsServer && packet.IsServer)
