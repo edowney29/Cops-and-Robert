@@ -7,6 +7,7 @@ TagManager:
   - Crate
   - Cop Crate
   - Rob Crate
+  - Other Player
   layers:
   - Default
   - TransparentFX

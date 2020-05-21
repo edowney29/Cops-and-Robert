@@ -3,53 +3,141 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    float globalTimer = 0f;
-    int globalExports = 0;
+    int exportScore = 0;
+    float gameTimer = 0f, tickTimer = 0f;
+    bool isRunning = false;
 
-    // public string id;
+    // List<string> exportCrates = new List<string>();
+    // List<float> exportTimers = new List<float>();
 
-    InterfaceManager interfaceManager;
-
-    public Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
-
-    void Start()
-    {
-        interfaceManager.GetComponent<InterfaceManager>();
-    }
+    Dictionary<string, List<float>> exportHolder = new Dictionary<string, List<float>>();
+    Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
 
     void Update()
     {
-        globalTimer += Time.deltaTime;
+        if (!isRunning)
+        {
+            exportScore = 0;
+            gameTimer = 0f;
+            tickTimer = 0f;
+        }
+        else
+        {
+            gameTimer += Time.deltaTime;
+            tickTimer += Time.deltaTime;
+
+            foreach (var export in exportHolder)
+            {
+                if (cratesHolder.TryGetValue(export.Key, out Crate crate))
+                {
+                    export.Value.RemoveAll(timer =>
+                    {
+                        timer += Time.deltaTime;
+                        return crate.ScoreDrug(timer);
+                    });
+                }
+            }
+        }
     }
 
-    // public void SetId(string _id)
-    // {
-    //     id = _id;
-    // }
+    public void ResetGameState()
+    {
+        CancelInvoke("UpdateCrateTimers");
+        isRunning = false;
+    }
 
-    public void SetupGameState()
+    public void SetupGameState(Dictionary<string, OtherController> players, string _id)
+    {
+        cratesHolder.Clear();
+        var names = new PlayerNameSetter().Names;
+        Crate mycrate = new Crate(_id, names[names.Length - 1]);
+        cratesHolder.Add(_id, mycrate);
+
+        int index = 0;
+        foreach (var player in players)
+        {
+            string id = player.Key;
+            Crate crate = new Crate(player.Key, names[index++]);
+            cratesHolder.Add(id, crate);
+        }
+
+        List<string> playerList = new List<string>();
+        playerList.Add(_id);
+        foreach (var key in cratesHolder.Keys)
+        {
+            playerList.Add(key);
+        }
+
+        for (int i = 0; i < playerList.Count; ++i)
+        {
+            string tmp = playerList[i];
+            int rng = Random.Range(i, playerList.Count);
+            playerList[i] = playerList[rng];
+            playerList[rng] = tmp;
+        }
+
+        float rolePercent = Random.value;
+        for (int i = 0; i < playerList.Count; i += 1)
+        {
+            if (cratesHolder.TryGetValue(playerList[i], out Crate player))
+            {
+                if (i == 0 || i == 1) player.Role = RoleCode._1;
+                else if (i == 2 || i == 3) player.Role = RoleCode._2;
+                else if (i == 4 || i == 5) player.Role = RoleCode._3;
+                else if ((i == 6 || i == 7) && playerList.Count >= 8) player.Role = RoleCode._4;
+                else if ((i == 8 || i == 9) && playerList.Count >= 10) player.Role = rolePercent > 0.5 ? RoleCode._5 : RoleCode._6;
+                else player.Role = RoleCode._2;
+            }
+        }
+
+        SetupCreates();
+        InvokeRepeating("UpdateCrateTimers", 0f, 180f);
+        isRunning = true;
+    }
+
+    void SetupCreates()
     {
         var crates = GameObject.FindGameObjectsWithTag("Crate");
+        for (int i = 0; i < crates.Length; ++i)
+        {
+            GameObject tmp = crates[i];
+            int rng = Random.Range(i, crates.Length);
+            crates[i] = crates[rng];
+            crates[rng] = tmp;
+        }
+        int idx = 0;
         foreach (var _crate in crates)
         {
-            string id = _crate.GetComponent<CrateSetter>().Id;
-            Crate crate = new Crate(id, AccessCode.All);
+            string id = _crate.GetComponent<CrateController>().Id;
+            Crate crate = new Crate(id, "Crate");
+            crate.Access = AccessCode.Null;
+            if (idx == 0)
+            {
+                crate.IsExport = true;
+                exportHolder.Add(crate.Id, new List<float>());
+                crate.AddExportTimer += AddExportTimer;
+                crate.RemoveExportTimer += RemoveExportTimer;
+
+            }
+            cratesHolder.Add(id, crate);
+            idx += 1;
+        }
+
+        var rcrates = GameObject.FindGameObjectsWithTag("Rob Crate");
+        foreach (var _crate in crates)
+        {
+            string id = _crate.GetComponent<CrateController>().Id;
+            Crate crate = new Crate(id, "Drug Stash");
+            crate.Access = AccessCode.Robs;
             cratesHolder.Add(id, crate);
         }
 
         var ccrates = GameObject.FindGameObjectsWithTag("Cop Crate");
         foreach (var _crate in crates)
         {
-            string id = _crate.GetComponent<CrateSetter>().Id;
-            Crate crate = new Crate(id, AccessCode.Cops);
-            cratesHolder.Add(id, crate);
-        }
-
-        var rcrates = GameObject.FindGameObjectsWithTag("Rob Crate");
-        foreach (var _crate in crates)
-        {
-            string id = _crate.GetComponent<CrateSetter>().Id;
-            Crate crate = new Crate(id, AccessCode.Robs);
+            string id = _crate.GetComponent<CrateController>().Id;
+            Crate crate = new Crate(id, "Evidence Locker");
+            crate.Access = AccessCode.Cops;
             cratesHolder.Add(id, crate);
         }
     }
@@ -57,18 +145,53 @@ public class GameManager : MonoBehaviour
     public bool UpdateGameState(PlayerPacket packet, OtherController oc)
     {
         // ValidateAction(oc.gameObject);
-        if (oc.crateList.Count == 0) return false;
-        if (cratesHolder.TryGetValue(oc.crateList[oc.crateList.Count - 1], out Crate crate) && cratesHolder.TryGetValue(packet.Token, out Crate player))
+        if (cratesHolder.TryGetValue(packet.Token, out Crate player))
         {
-            var reaction = crate.DoAction(packet.Action, player.Access);
-            if (reaction != ActionType.Null)
+            if (oc.crateList.Count == 0) // TODO: Handle doing skills better
             {
-                player.DoAction(reaction, player.Access);
+                // player.DoSkill(packet.Action);
+                return true;
             }
-            return true;
+            else
+            {
+                if (cratesHolder.TryGetValue(oc.crateList[oc.crateList.Count - 1], out Crate crate))
+                {
+                    crate.DoAction(player, packet.Action);
+                    return true;
+                }
+            }
         }
         return false;
     }
+
+    void UpdateCrateTimers()
+    {
+        foreach (var crate in cratesHolder)
+        {
+            // Get Rob Crate --- Add 1 Drug
+            if (crate.Value.Access == AccessCode.Robs && crate.Value.Role == RoleCode.Null && crate.Value.Drugs < 100)
+            {
+                crate.Value.Drugs += 1;
+            }
+        }
+    }
+
+    void AddExportTimer(object sender, Crate crate)
+    {
+        if (exportHolder.TryGetValue(crate.Id, out List<float> timers))
+        {
+            timers.Add(0f);
+        }
+    }
+
+    void RemoveExportTimer(object sender, Crate crate)
+    {
+        if (exportHolder.TryGetValue(crate.Id, out List<float> timers))
+        {
+            timers.RemoveAt(timers.Count - 1);
+        }
+    }
+
 
     // bool ValidateAction(GameObject gameObject)
     // {
@@ -79,25 +202,20 @@ public class GameManager : MonoBehaviour
 
 public enum AccessCode
 {
-    All,
+    Null,
     Cops,
-    Robs
+    Robs,
 }
 
 public enum RoleCode
 {
+    Null,
     _1,
     _2,
     _3,
     _4,
     _5,
-}
-
-public enum StateType
-{
-    Game,
-    Score,
-    Other
+    _6,
 }
 
 public enum ActionType
@@ -111,99 +229,128 @@ public enum ActionType
     DestroyEvidence,
     CreateWarrant,
     UseWarrant,
-    CreateJail,
+    UseJail,
 }
 
 public class Crate
 {
-    public readonly string Id;
-    public readonly AccessCode Access;
-    public int Drugs { get; private set; }
-    public int Evidence { get; private set; }
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public int Drugs { get; set; }
+    public int Evidence { get; set; }
+    public int Score { get; set; }
+    public bool IsExport { get; set; }
+    public RoleCode Role { get; set; }
+    public AccessCode Access { get; set; }
 
-    public Crate(string id, AccessCode access)
+    public event System.EventHandler<Crate> AddExportTimer;
+    public event System.EventHandler<Crate> RemoveExportTimer;
+
+    public Crate(string id, string name)
     {
         Id = id;
-        Access = access;
+        Name = name;
+        Role = RoleCode.Null;
+        Access = AccessCode.Null;
+        IsExport = false;
         Evidence = 0;
         Drugs = 0;
     }
 
-    public ActionType DoAction(ActionType action, AccessCode otherAccess)
+    public bool CanRole1View(Crate player)
     {
-        if (otherAccess == Access)
-        {
-            if (action == ActionType.GetDrugs && Drugs > 0)
-            {
-                Drugs -= 1;
-                return ActionType.StoreDrugs;
-            }
-            if (action == ActionType.StoreDrugs && Drugs < 100)
-            {
-                Drugs += 1;
-                DoAction(ActionType.CreateEvidence, otherAccess);
-                return ActionType.GetDrugs;
-            }
-            if (action == ActionType.GetEvidence && Evidence > 0)
-            {
-                Evidence -= 1;
-                return ActionType.StoreEvidence;
-            }
-            if (action == ActionType.StoreEvidence && Evidence < 2)
-            {
-                Evidence += 1;
-                return ActionType.GetEvidence;
-            }
-            if (action == ActionType.CreateEvidence && Evidence < 2)
-            {
-                Evidence += 1;
-                return ActionType.Null;
-            }
-            if (action == ActionType.DestroyEvidence && Evidence > 0)
-            {
-                Evidence -= 1;
-                return ActionType.Null;
-            }
-        }
-        return ActionType.Null;
+        return Access == player.Access && (Role == RoleCode._2 || Role == RoleCode._3);
     }
 
-    public ActionType DoSkill(ActionType action, AccessCode otherAccess)
+    public bool ScoreDrug(float timer)
     {
-        // if (otherAccess == Access)
-        // {
-        //     if (action == ActionType.GetDrugs && Drugs > 0)
-        //     {
-        //         Drugs -= 1;
-        //         return ActionType.StoreDrugs;
-        //     }
-        //     if (action == ActionType.StoreDrugs && Drugs < 100)
-        //     {
-        //         Drugs += 1;
-        //         DoAction(ActionType.CreateEvidence, otherAccess);
-        //         return ActionType.GetDrugs;
-        //     }
-        //     if (action == ActionType.GetEvidence && Evidence > 0)
-        //     {
-        //         Evidence -= 1;
-        //         return ActionType.StoreEvidence;
-        //     }
-        //     if (action == ActionType.StoreEvidence && Evidence < 2)
-        //     {
-        //         Evidence += 1;
-        //         return ActionType.GetEvidence;
-        //     }
-        //     if (action == ActionType.CreateEvidence && Evidence < 2)
-        //     {
-        //         Evidence += 1;
-        //         return ActionType.Null;
-        //     }
-        //     if (action == ActionType.DestroyEvidence && Evidence > 0)
-        //     {
-        //         Evidence -= 1;
-        //         return ActionType.Null;
-        //     }
-        // }
-        return ActionType.Null;
+        if (Drugs > 0 && timer > 180f)
+        {
+            Drugs -= 1;
+            Score += 1;
+            return true;
+        }
+        return false;
+    }
+
+    public bool DoAction(Crate player, ActionType action)
+    {
+        // Crate has Drugs --- Player has no Drugs
+        if (action == ActionType.GetDrugs && Drugs > 0 && player.Drugs == 0 && (player.Access == AccessCode.Robs || player.Role == RoleCode._3 || player.Role == RoleCode._4))
+        {
+            Drugs -= 1;
+            player.Drugs += 1;
+            if (IsExport) RemoveExportTimer?.Invoke(this, this);
+            return true;
+        }
+
+        // Crate can hold more Drugs --- Player has Drugs
+        if (action == ActionType.StoreDrugs && Drugs < 100 && player.Drugs > 0 && (player.Access == AccessCode.Robs || player.Role == RoleCode._3 || player.Role == RoleCode._4))
+        {
+            Drugs += 1;
+            player.Drugs -= 1;
+
+            if ((player.Access == AccessCode.Robs && player.Role == RoleCode._1) || // Robert
+            (player.Access == AccessCode.Robs && player.Role == RoleCode._2) ||     // Criminal
+            (player.Access == AccessCode.Cops && player.Role == RoleCode._3) ||     // Mob Cop
+            (player.Access == AccessCode.Cops && player.Role == RoleCode._4) ||     // Crooked Cop
+            (player.Access == AccessCode.Robs && player.Role == RoleCode._5))       // Street Thug
+                Evidence += 1; // Evidence will be created
+
+            if (Access == AccessCode.Robs) Evidence = 0; // Rob Crate has no Evidence
+            if (Access == AccessCode.Null && Evidence > 1) Evidence = 1; // Normal Crate max 1 Evidence
+
+            if (IsExport) AddExportTimer?.Invoke(this, this);
+            return true;
+        }
+
+        // Crate has Evidence --- Player has no Evidence
+        if (action == ActionType.GetEvidence && Evidence > 0 && player.Evidence == 0 && (player.Access == AccessCode.Cops || player.Role == RoleCode._3 || player.Role == RoleCode._4))
+        {
+            Evidence -= 1;
+            player.Evidence += 1;
+            return true;
+        }
+
+        // Crate can hold more Evidence --- Player has Evidence
+        if (action == ActionType.StoreEvidence && Evidence < 100 && player.Evidence > 0 && (player.Access == AccessCode.Cops || player.Role == RoleCode._3 || player.Role == RoleCode._4))
+        {
+            if (Access == AccessCode.Null && Evidence > 0) return false; // Normal Crate max 1 Evidence --- CANCEL ACTION
+            if (Access == AccessCode.Robs) return false; // Rob Crate can't hold Evidence --- CANCEL ACTION
+            Evidence += 1;
+            player.Evidence -= 1;
+            return true;
+        }
+
+        // Crate can hold more Evidence --- Player has Evidence
+        if (action == ActionType.CreateWarrant && Evidence >= 7 && (player.Access == AccessCode.Cops || player.Role == RoleCode._3 || player.Role == RoleCode._4))
+        {
+            if (Access == AccessCode.Null && Evidence > 0) return false; // Normal Crate max 1 Evidence --- CANCEL ACTION
+            if (Access == AccessCode.Robs) return false; // Rob Crate can't hold Evidence --- CANCEL ACTION
+            Evidence += 1;
+            player.Evidence -= 1;
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool DoSkill(ActionType action)
+    {
+        // Player has no Evidence --- Player can create Evidence
+        if (action == ActionType.CreateEvidence && Evidence == 0 && Access == AccessCode.Robs && Role == RoleCode._3)
+        {
+            Evidence += 1;
+            return true;
+        }
+
+        // Player has Evidence --- Player can destroy Evidence
+        if (action == ActionType.DestroyEvidence && Evidence > 0 && Access == AccessCode.Cops && Role == RoleCode._3)
+        {
+            Evidence -= 1;
+            return true;
+        }
+
+        return false;
     }
 }

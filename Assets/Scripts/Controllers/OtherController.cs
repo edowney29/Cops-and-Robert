@@ -33,7 +33,7 @@ public class OtherController : MonoBehaviour
     {
         if (other.gameObject.tag == "Crate")
         {
-            crateList.Add(other.gameObject.GetComponent<CrateSetter>().Id);
+            crateList.Add(other.gameObject.GetComponent<CrateController>().Id);
         }
     }
 
@@ -41,7 +41,7 @@ public class OtherController : MonoBehaviour
     {
         if (other.gameObject.tag == "Crate")
         {
-            crateList.Remove(other.gameObject.GetComponent<CrateSetter>().Id);
+            crateList.Remove(other.gameObject.GetComponent<CrateController>().Id);
         }
     }
 

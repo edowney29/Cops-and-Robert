@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class WowPlayerController : MonoBehaviour
 {
     // Inputs
     public Controls controls;
@@ -50,7 +50,7 @@ public class PlayerController : MonoBehaviour
     // References
     CharacterController controller;
     public Transform groundDirection, moveDirection, fallDirection, swimDirection;
-    public CameraController mainCam;
+    public WowCameraController mainCam;
 
     [SerializeField]
     public MeshRenderer visior;

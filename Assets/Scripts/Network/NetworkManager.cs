@@ -105,7 +105,7 @@ public class NetworkManager : MonoBehaviour
 
                 }
             }
-            else if (packet.Type == PacketType.Game)
+            else if (packet.Type == PacketType.GameState)
             {
                 if (IsServer && !packet.IsServer)
                 {
@@ -137,6 +137,16 @@ public class NetworkManager : MonoBehaviour
         };
 
         await WebSocket.Connect();
+    }
+
+    public void StartGame()
+    {
+        gameManager.SetupGameState(otherPlayers, Token);
+    }
+
+    public void StopGame()
+    {
+        gameManager.ResetGameState();
     }
 
     public void SpawnPlayer()
@@ -190,7 +200,8 @@ public enum PacketType
 {
     Player,
     Voice,
-    Game,
+    GameState,
+    Actions,
 }
 
 public class PlayerJson

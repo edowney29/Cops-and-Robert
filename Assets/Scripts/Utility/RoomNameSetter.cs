@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class RoomSetter : MonoBehaviour
+public class RoomNameSetter : MonoBehaviour
 {
     [SerializeField]
     string token, roomName;

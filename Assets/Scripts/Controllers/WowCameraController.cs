@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public class WowCameraController : MonoBehaviour
 {
     //Input Variables
     KeyCode leftMouse = KeyCode.Mouse0, rightMouse = KeyCode.Mouse1, middleMouse = KeyCode.Mouse2;
@@ -40,7 +40,7 @@ public class CameraController : MonoBehaviour
     RaycastHit camRayHit;
 
     //References
-    PlayerController player;
+    WowPlayerController player;
     public Transform tilt;
     Camera mainCam;
 
@@ -51,7 +51,7 @@ public class CameraController : MonoBehaviour
 
     void Start()
     {
-        player = FindObjectOfType<PlayerController>();
+        player = FindObjectOfType<WowPlayerController>();
         player.mainCam = this;
         mainCam = Camera.main;
 

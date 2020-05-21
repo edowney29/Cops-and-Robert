@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class CrateSetter : MonoBehaviour
+public class CrateController : MonoBehaviour
 {
     public string Id { get; private set; }
 
