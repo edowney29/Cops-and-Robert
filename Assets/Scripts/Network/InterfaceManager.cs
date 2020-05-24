@@ -4,11 +4,11 @@ using UnityEngine;
 public class InterfaceManager : MonoBehaviour
 {
     [SerializeField]
-    GameObject menuPanel, locationPanel;
+    GameObject menuPanel, locationPanel, startGameButton, cratesObject;
     [SerializeField]
     TMP_InputField usernameInput, passwordInput;
     [SerializeField]
-    TMP_Text locationText;
+    TMP_Text locationText, drugsCountText, evidenceCountText, exportsCountText;
 
     public string RoomId { get; private set; }
     public string Username { get; private set; }
@@ -46,5 +46,11 @@ public class InterfaceManager : MonoBehaviour
     {
         locationPanel.SetActive(true);
         menuPanel.SetActive(false);
+    }
+
+    public void SetupIsServerView()
+    {    
+        startGameButton.SetActive(true);
+        cratesObject.SetActive(true);
     }
 }

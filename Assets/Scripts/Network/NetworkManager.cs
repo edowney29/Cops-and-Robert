@@ -3,33 +3,32 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NetworkManager : MonoBehaviour
+public class NetworkManager : GameManager
 {
     [SerializeField]
-    GameObject prefabPlayer, prefabOtherPlayer;
+    GameObject prefabPlayer, prefabOtherPlayer, prefabCrate, prefabCopCrate, prefabRobCrate;
     GameObject player;
 
     PlayerJson playerJson = new PlayerJson();
-    public Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
+    Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
+    Dictionary<string, CrateController> gameCrates = new Dictionary<string, CrateController>();
     public List<PlayerPacket> voiceHolderClient = new List<PlayerPacket>();
     public List<PlayerPacket> voiceHolderServer = new List<PlayerPacket>();
-    public List<PlayerPacket> playerActionHolder = new List<PlayerPacket>();
 
-    public GameManager gameManager { get; private set; }
-    public InterfaceManager interfaceManager { get; private set; }
+    InterfaceManager interfaceManager { get; set; }
     public Dissonance.DissonanceComms comms { get; private set; }
     public WebSocket WebSocket { get; private set; }
     public string Token { get; private set; }
-    public bool IsServer { get; private set; }
     public string ServerToken { get; private set; }
+    public bool IsServer { get; private set; }
 
     void Start()
     {
-        gameManager = GetComponent<GameManager>();
         interfaceManager = GetComponent<InterfaceManager>();
         comms = GetComponent<Dissonance.DissonanceComms>();
 
         InvokeRepeating("SendPlayerJSON", 0f, 0.33333334f);
+        InvokeRepeating("SendGameJSON", 0f, 1f);
     }
 
     public async void StartWebSocket()
@@ -51,8 +50,8 @@ public class NetworkManager : MonoBehaviour
             Debug.Log("Connection closed!");
             Token = null;
             comms.enabled = false;
-            Destroy(player);
-            Destroy(Camera.main.gameObject);
+            // Destroy(player);
+            // Destroy(Camera.main.gameObject);
             interfaceManager.ShowMenu();
         };
 
@@ -64,76 +63,99 @@ public class NetworkManager : MonoBehaviour
             // foreach (string json in jsonHolder.Split('|'))
             // {          
             PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
+            // Debug.Log("[PACKET]: TYPE_" + packet.Type + " --- " + packet.Token + " --- " + packet.IsServer);
             if (packet.IsServer) ServerToken = packet.Token;
-            Debug.Log("[PACKET]: TYPE_" + packet.Type + " --- " + packet.Token + " --- " + packet.IsServer);
-
             if (Token == null)
             {
                 Token = packet.Token;
-                IsServer = packet.IsServer;
+                // IsServer = packet.IsServer;
                 // username = packet.Username;
                 SpawnPlayer();
             }
-            else if (packet.Type == PacketType.Player)
-            {
-                if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
-                {
-                    oc.UpdateTransform(packet);
-                }
-                else
-                {
-                    GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
-                    // obj.name = packet.Token;
-                    obj.GetComponent<VoiceController>().StartVoice(packet.Token);
-                    otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
-                }
-            }
-            else if (packet.Type == PacketType.Voice)
-            {
-                if (IsServer && !packet.IsServer && !packet.IsP2P)
-                {
-                    // Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
-                    voiceHolderServer.Add(packet);
-                }
-                else if (packet.IsServer || packet.IsP2P)
-                {
-                    // Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
-                    voiceHolderClient.Add(packet);
-                }
-                else
-                {
 
-                }
-            }
-            else if (packet.Type == PacketType.GameState)
-            {
-                if (IsServer && !packet.IsServer)
+            IsServer = Token.Equals(ServerToken);
+            if (IsServer)
+                if (packet.Type == PacketType.Player)
                 {
-                    // Consume an action from client
-                    // Check if valid actions
-                    // Send game state to all clients
+                    if (IsServer) return;
                     if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                     {
-                        if (gameManager.UpdateGameState(packet, oc))
-                        {
-                            // Send updated game state to clients
-                        }
+                        oc.UpdateTransform(packet);
+                    }
+                    else
+                    {
+                        GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
+                        // obj.name = packet.Token;
+                        obj.GetComponent<VoiceController>().StartVoice(packet.Token);
+                        otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
                     }
                 }
-                else if (!IsServer && packet.IsServer)
+                else if (packet.Type == PacketType.Voice)
                 {
-                    // Consume game state
-                    // Update UI
+                    if (IsServer && !packet.IsServer && !packet.IsP2P)
+                    {
+                        // Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
+                        voiceHolderServer.Add(packet);
+                    }
+                    else if (packet.IsServer || packet.IsP2P)
+                    {
+                        // Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
+                        voiceHolderClient.Add(packet);
+                    }
+                    else
+                    {
+
+                    }
+                }
+                else if (packet.Type == PacketType.GameState)
+                {
+                    // Debug.Log(packet.Crates);
+                    if (IsServer && !packet.IsServer)
+                    {
+                        if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
+                        {
+                            if (UpdateGameState(packet, oc))
+                            {
+                                SendGameJSON();
+                            }
+                        }
+                    }
+                    else if (packet.IsServer)
+                    {
+                        int exportScore = 0;
+                        Crate[] crates = JsonConvert.DeserializeObject<Crate[]>(packet.Crates);
+                        foreach (var crate in crates)
+                        {
+                            if (crate.Role == RoleCode.Null)
+                            {
+                                Debug.Log(crate.Id);
+                                // if (gameCrates.TryGetValue(crate.Id, out CrateController cc))
+                                // {
+                                //     cc.crate = crate;
+                                //     exportScore += crate.Score;
+                                //     // interfaceManager
+                                // }
+                                // else
+                                // {
+                                //     var prefab = prefabCrate;
+                                //     if (crate.Access == AccessCode.Cops) prefab = prefabCopCrate;
+                                //     if (crate.Access == AccessCode.Robs) prefab = prefabRobCrate;
+                                //     GameObject obj = Instantiate(prefab, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
+                                //     // obj.name = packet.Token;
+                                //     gameCrates.Add(packet.Token, obj.GetComponent<CrateController>());
+                                // }
+                            }
+                        }
+                    }
+                    else
+                    {
+
+                    }
                 }
                 else
                 {
 
                 }
-            }
-            else
-            {
-
-            }
         };
 
         await WebSocket.Connect();
@@ -141,15 +163,13 @@ public class NetworkManager : MonoBehaviour
 
     public void StartGame()
     {
-        gameManager.SetupGameState(otherPlayers, Token);
+        if (isRunning)
+            ResetGameState();
+        else
+            SetupGameState(otherPlayers, Token);
     }
 
-    public void StopGame()
-    {
-        gameManager.ResetGameState();
-    }
-
-    public void SpawnPlayer()
+    void SpawnPlayer()
     {
         comms.LocalPlayerName = Token;
         comms.enabled = true;
@@ -163,12 +183,7 @@ public class NetworkManager : MonoBehaviour
     {
         if (WebSocket != null && player != null && Token != null)
         {
-            playerJson.PosX = player.transform.position.x;
-            playerJson.PosY = player.transform.position.y;
-            playerJson.PosZ = player.transform.position.z;
-            playerJson.RotX = player.transform.rotation.eulerAngles.x;
-            playerJson.RotY = player.transform.rotation.eulerAngles.y;
-            playerJson.RotZ = player.transform.rotation.eulerAngles.z;
+            playerJson.UpdateTransform(player.transform);
             if (WebSocket.State == WebSocketState.Open)
             {
                 string json = JsonConvert.SerializeObject(playerJson);
@@ -179,13 +194,19 @@ public class NetworkManager : MonoBehaviour
 
     async void SendGameJSON()
     {
-        if (WebSocket != null)
+        if (IsServer)
         {
-
-            if (WebSocket.State == WebSocketState.Open)
+            interfaceManager.SetupIsServerView();
+            if (WebSocket != null && Token != null && isRunning)
             {
-                string json = JsonConvert.SerializeObject(playerJson);
-                await WebSocket.SendText(json);
+                if (WebSocket.State == WebSocketState.Open)
+                {
+                    Crate[] crates = new Crate[cratesHolder.Count];
+                    cratesHolder.Values.CopyTo(crates, 0);
+                    var packet = new GameStateJson(JsonConvert.SerializeObject(crates));
+                    string json = JsonConvert.SerializeObject(packet);
+                    await WebSocket.SendText(json);
+                }
             }
         }
     }
@@ -201,26 +222,40 @@ public enum PacketType
     Player,
     Voice,
     GameState,
-    Actions,
 }
 
 public class PlayerJson
 {
-    public readonly PacketType Type;
-    public float PosX, PosY, PosZ, RotX, RotY, RotZ;
+    public PacketType Type { get; set; }
+    public float PosX { get; set; }
+    public float PosY { get; set; }
+    public float PosZ { get; set; }
+    public float RotX { get; set; }
+    public float RotY { get; set; }
+    public float RotZ { get; set; }
 
     public PlayerJson()
     {
         Type = PacketType.Player;
     }
+
+    public void UpdateTransform(Transform transform)
+    {
+        PosX = transform.position.x;
+        PosY = transform.position.y;
+        PosZ = transform.position.z;
+        RotX = transform.eulerAngles.x;
+        RotY = transform.eulerAngles.y;
+        RotZ = transform.rotation.eulerAngles.z;
+    }
 }
 
 public class VoiceJson
 {
-    public readonly PacketType Type;
-    public readonly string Dest;
-    public readonly byte[] Data;
-    public readonly bool IsP2P;
+    public PacketType Type { get; set; }
+    public string Dest { get; set; }
+    public byte[] Data { get; set; }
+    public bool IsP2P { get; set; }
 
     public VoiceJson(string dest, byte[] data, bool isP2P)
     {
@@ -231,19 +266,32 @@ public class VoiceJson
     }
 }
 
+public class GameStateJson
+{
+    public PacketType Type { get; set; }
+    public string Crates { get; set; }
+    public GameStateJson(string crates)
+    {
+        Type = PacketType.GameState;
+        Crates = crates;
+    }
+}
+
 public class PlayerPacket
 {
-    public readonly PacketType Type;
-    public readonly string Token, Username, Dest;
-    public readonly bool IsServer, IsP2P;
-    public readonly float PosX, PosY, PosZ, RotX, RotY, RotZ;
-    public readonly byte[] Data;
-    public readonly ActionType Action;
-    public readonly Crate[] GameState;
-
-    public PlayerPacket(string token, byte[] data)
-    {
-        Token = token;
-        Data = data;
-    }
+    public PacketType Type { get; set; }
+    public string Token { get; set; }
+    public string Username { get; set; }
+    public string Dest { get; set; }
+    public bool IsServer { get; set; }
+    public bool IsP2P { get; set; }
+    public float PosX { get; set; }
+    public float PosY { get; set; }
+    public float PosZ { get; set; }
+    public float RotX { get; set; }
+    public float RotY { get; set; }
+    public float RotZ { get; set; }
+    public byte[] Data { get; set; }
+    public ActionType Action { get; set; }
+    public string Crates { get; set; }
 }

@@ -2,15 +2,21 @@
 
 public class CrateController : MonoBehaviour
 {
-    public string Id { get; private set; }
+    public Crate crate;
 
-    void Start()
+    void OnTriggerEnter(Collider other)
     {
-        Id = System.Guid.NewGuid().ToString();
+        if (other.gameObject.tag.Equals("Other Player"))
+        {
+            other.GetComponent<OtherController>().crateList.Add(crate.Id);
+        }
     }
 
-    public void UpdateId(string id)
+    void OnTriggerExit(Collider other)
     {
-        Id = id;
+        if (other.gameObject.tag.Equals("Other Player"))
+        {
+            other.GetComponent<OtherController>().crateList.Remove(crate.Id);
+        }
     }
 }

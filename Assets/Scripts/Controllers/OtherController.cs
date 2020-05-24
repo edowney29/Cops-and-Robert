@@ -29,22 +29,6 @@ public class OtherController : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Crate")
-        {
-            crateList.Add(other.gameObject.GetComponent<CrateController>().Id);
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.gameObject.tag == "Crate")
-        {
-            crateList.Remove(other.gameObject.GetComponent<CrateController>().Id);
-        }
-    }
-
     void AsyncUpdate()
     {
         transform.DOMove(position, waitTime, false);

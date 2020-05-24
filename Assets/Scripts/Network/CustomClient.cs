@@ -14,10 +14,7 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
     public override void Connect()
     {
-        if (networkManager.WebSocket.State == NativeWebSocket.WebSocketState.Open)
-        {
-            base.Connected();
-        }
+        base.Connected();
     }
 
     protected override void ReadMessages()
@@ -76,11 +73,11 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
 
     async void SendPacket(byte[] data, bool isP2P)
     {
-
         // For when client is also server loopback
         if (networkManager.IsServer)
         {
-            var packet = new PlayerPacket(networkManager.Token, data);
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(new VoiceJson(networkManager.ServerToken, data, isP2P));
+            PlayerPacket packet = Newtonsoft.Json.JsonConvert.DeserializeObject<PlayerPacket>(json);
             networkManager.voiceHolderServer.Add(packet);
         }
         else

@@ -3,25 +3,18 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    int exportScore = 0;
     float gameTimer = 0f, tickTimer = 0f;
-    bool isRunning = false;
+    protected bool isRunning = false;
 
     // List<string> exportCrates = new List<string>();
     // List<float> exportTimers = new List<float>();
 
     Dictionary<string, List<float>> exportHolder = new Dictionary<string, List<float>>();
-    Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
+    protected Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
 
     void Update()
     {
-        if (!isRunning)
-        {
-            exportScore = 0;
-            gameTimer = 0f;
-            tickTimer = 0f;
-        }
-        else
+        if (isRunning)
         {
             gameTimer += Time.deltaTime;
             tickTimer += Time.deltaTime;
@@ -40,32 +33,36 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void ResetGameState()
+    protected void ResetGameState()
     {
-        CancelInvoke("UpdateCrateTimers");
         isRunning = false;
+        CancelInvoke("UpdateCrateTimers");
     }
 
-    public void SetupGameState(Dictionary<string, OtherController> players, string _id)
+    protected void SetupGameState(Dictionary<string, OtherController> players, string _id)
     {
-        cratesHolder.Clear();
+        gameTimer = 0f;
+        tickTimer = 0f;
         var names = new PlayerNameSetter().Names;
-        Crate mycrate = new Crate(_id, names[names.Length - 1]);
+
+        cratesHolder.Clear();
+        Crate mycrate = new Crate();
+        mycrate.Id = _id;
+        mycrate.Display = names[0];
         cratesHolder.Add(_id, mycrate);
+
+        List<string> playerList = new List<string>();
+        playerList.Add(_id);
 
         int index = 0;
         foreach (var player in players)
         {
-            string id = player.Key;
-            Crate crate = new Crate(player.Key, names[index++]);
-            cratesHolder.Add(id, crate);
-        }
-
-        List<string> playerList = new List<string>();
-        playerList.Add(_id);
-        foreach (var key in cratesHolder.Keys)
-        {
-            playerList.Add(key);
+            Crate crate = new Crate();
+            mycrate.Id = player.Key;
+            mycrate.Display = names[index + 1];
+            cratesHolder.Add(player.Key, crate);
+            playerList.Add(player.Key);
+            index += 1;
         }
 
         for (int i = 0; i < playerList.Count; ++i)
@@ -83,9 +80,9 @@ public class GameManager : MonoBehaviour
             {
                 if (i == 0 || i == 1) player.Role = RoleCode._1;
                 else if (i == 2 || i == 3) player.Role = RoleCode._2;
-                else if (i == 4 || i == 5) player.Role = RoleCode._3;
-                else if ((i == 6 || i == 7) && playerList.Count >= 8) player.Role = RoleCode._4;
-                else if ((i == 8 || i == 9) && playerList.Count >= 10) player.Role = rolePercent > 0.5 ? RoleCode._5 : RoleCode._6;
+                // else if (i == 4 || i == 5) player.Role = RoleCode._3;
+                // else if ((i == 6 || i == 7) && playerList.Count >= 8) player.Role = RoleCode._4;
+                // else if ((i == 8 || i == 9) && playerList.Count >= 10) player.Role = rolePercent > 0.5 ? RoleCode._5 : RoleCode._6;
                 else player.Role = RoleCode._2;
             }
         }
@@ -105,59 +102,70 @@ public class GameManager : MonoBehaviour
             crates[i] = crates[rng];
             crates[rng] = tmp;
         }
-        int idx = 0;
+        int index = 0;
         foreach (var _crate in crates)
         {
-            string id = _crate.GetComponent<CrateController>().Id;
-            Crate crate = new Crate(id, "Crate");
+            var cc = _crate.GetComponent<CrateController>();
+            Crate crate = new Crate();
+            crate.Id = System.Guid.NewGuid().ToString();
+            crate.Display = "Crate";
             crate.Access = AccessCode.Null;
-            if (idx == 0)
+            crate.UpdateTransform(_crate.transform);
+            if (index == 0)
             {
                 crate.IsExport = true;
                 exportHolder.Add(crate.Id, new List<float>());
                 crate.AddExportTimer += AddExportTimer;
                 crate.RemoveExportTimer += RemoveExportTimer;
-
             }
-            cratesHolder.Add(id, crate);
-            idx += 1;
+            cratesHolder.Add(crate.Id, crate);
+            cc.crate = crate;
+            _crate.SetActive(false);
+            index += 1;
         }
 
         var rcrates = GameObject.FindGameObjectsWithTag("Rob Crate");
-        foreach (var _crate in crates)
+        foreach (var _crate in rcrates)
         {
-            string id = _crate.GetComponent<CrateController>().Id;
-            Crate crate = new Crate(id, "Drug Stash");
+            var cc = _crate.GetComponent<CrateController>();
+            Crate crate = new Crate();
+            crate.Id = System.Guid.NewGuid().ToString();
+            crate.Display = "Drug Stash";
             crate.Access = AccessCode.Robs;
-            cratesHolder.Add(id, crate);
+            crate.UpdateTransform(_crate.transform);
+            cratesHolder.Add(crate.Id, crate);
+            _crate.SetActive(false);
         }
 
         var ccrates = GameObject.FindGameObjectsWithTag("Cop Crate");
-        foreach (var _crate in crates)
+        foreach (var _crate in ccrates)
         {
-            string id = _crate.GetComponent<CrateController>().Id;
-            Crate crate = new Crate(id, "Evidence Locker");
+            var cc = _crate.GetComponent<CrateController>();
+            Crate crate = new Crate();
+            crate.Id = System.Guid.NewGuid().ToString();
+            crate.Display = "Evidence Locker";
             crate.Access = AccessCode.Cops;
-            cratesHolder.Add(id, crate);
+            crate.UpdateTransform(_crate.transform);
+            cratesHolder.Add(crate.Id, crate);
+            _crate.SetActive(false);
         }
     }
 
-    public bool UpdateGameState(PlayerPacket packet, OtherController oc)
+    protected bool UpdateGameState(PlayerPacket packet, OtherController oc)
     {
         // ValidateAction(oc.gameObject);
         if (cratesHolder.TryGetValue(packet.Token, out Crate player))
         {
             if (oc.crateList.Count == 0) // TODO: Handle doing skills better
             {
-                // player.DoSkill(packet.Action);
+                // return player.DoSkill(packet.Action);
                 return true;
             }
             else
             {
                 if (cratesHolder.TryGetValue(oc.crateList[oc.crateList.Count - 1], out Crate crate))
                 {
-                    crate.DoAction(player, packet.Action);
-                    return true;
+                    return crate.DoAction(player, packet.Action);
                 }
             }
         }
@@ -234,8 +242,14 @@ public enum ActionType
 
 public class Crate
 {
+    public float PosX { get; set; }
+    public float PosY { get; set; }
+    public float PosZ { get; set; }
+    public float RotX { get; set; }
+    public float RotY { get; set; }
+    public float RotZ { get; set; }
     public string Id { get; set; }
-    public string Name { get; set; }
+    public string Display { get; set; }
     public int Drugs { get; set; }
     public int Evidence { get; set; }
     public int Score { get; set; }
@@ -246,15 +260,14 @@ public class Crate
     public event System.EventHandler<Crate> AddExportTimer;
     public event System.EventHandler<Crate> RemoveExportTimer;
 
-    public Crate(string id, string name)
+    public void UpdateTransform(Transform transform)
     {
-        Id = id;
-        Name = name;
-        Role = RoleCode.Null;
-        Access = AccessCode.Null;
-        IsExport = false;
-        Evidence = 0;
-        Drugs = 0;
+        PosX = transform.position.x;
+        PosY = transform.position.y;
+        PosZ = transform.position.z;
+        RotX = transform.rotation.eulerAngles.x;
+        RotY = transform.rotation.eulerAngles.y;
+        RotZ = transform.rotation.eulerAngles.z;
     }
 
     public bool CanRole1View(Crate player)
