@@ -254,7 +254,7 @@ Join us on Discord (https://placeholder.software/discord) to discuss these chang
  - Fixed string hashing using GetHashCode which is not stable between runtimes. Now using an FNV-1a hash for all string hashing.
  - Fixed GetSpeakingChannels returning all channels as if they were Player channels.
  - Fixed buffered network packets potentially 'leaking' from one session to the next when the comms network is shut down and restarted.
- - Fixed a potential NullReferenceException in HLAPI integration if networkManager.singleton returns null.
+ - Fixed a potential NullReferenceException in HLAPI integration if NetworkManager.singleton returns null.
  - Fixed preprocessor thread waking up too frequently when there is no work to do, significantly reducing CPU usage.
  - Prevented the Lost NN samples in the preprocessor (buffer full), injecting silence to compensate message appearing every frame once any samples had been lost.
 

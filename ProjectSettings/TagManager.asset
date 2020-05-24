@@ -5,9 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - Crate
-  - Cop Crate
-  - Rob Crate
-  - Other Player
+  - CopCrate
+  - RobCrate
+  - OtherPlayer
   layers:
   - Default
   - TransparentFX

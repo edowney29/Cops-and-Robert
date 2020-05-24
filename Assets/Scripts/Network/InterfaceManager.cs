@@ -3,12 +3,9 @@ using UnityEngine;
 
 public class InterfaceManager : MonoBehaviour
 {
-    [SerializeField]
-    GameObject menuPanel, locationPanel, startGameButton, cratesObject;
-    [SerializeField]
-    TMP_InputField usernameInput, passwordInput;
-    [SerializeField]
-    TMP_Text locationText, drugsCountText, evidenceCountText, exportsCountText;
+    public GameObject menuPanel, locationPanel, startGameButton, cratesObject;
+    public TMP_InputField usernameInput, passwordInput;
+    public TMP_Text locationText, drugsCountText, evidenceCountText, exportsCountText;
 
     public string RoomId { get; private set; }
     public string Username { get; private set; }

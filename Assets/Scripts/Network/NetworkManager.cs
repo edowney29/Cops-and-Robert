@@ -6,9 +6,12 @@ using UnityEngine;
 public class NetworkManager : GameManager
 {
     [SerializeField]
-    GameObject prefabPlayer, prefabOtherPlayer, prefabCrate, prefabCopCrate, prefabRobCrate;
-    GameObject player;
+    GameObject prefabPlayer, prefabOtherPlayer, prefabCrate, prefabCopCrate, prefabRobCrate, prefabCratePopup;
+    [SerializeField]
+    Material blueVisor, redVisor;
 
+    GameObject player;
+    Crate playerCrate;
     PlayerJson playerJson = new PlayerJson();
     Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
     Dictionary<string, CrateController> gameCrates = new Dictionary<string, CrateController>();
@@ -63,12 +66,12 @@ public class NetworkManager : GameManager
             // foreach (string json in jsonHolder.Split('|'))
             // {          
             PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
-            // Debug.Log("[PACKET]: TYPE_" + packet.Type + " --- " + packet.Token + " --- " + packet.IsServer);
+            Debug.Log("[PACKET]: TYPE_" + packet.Type + " --- " + packet.Token + " --- " + packet.IsServer);
             if (packet.IsServer) ServerToken = packet.Token;
             if (Token == null)
             {
                 Token = packet.Token;
-                // IsServer = packet.IsServer;
+                if (packet.IsServer) interfaceManager.SetupIsServerView();
                 // username = packet.Username;
                 SpawnPlayer();
             }
@@ -76,7 +79,7 @@ public class NetworkManager : GameManager
             IsServer = Token.Equals(ServerToken);
             if (packet.Type == PacketType.Player)
             {
-                if (IsServer) return;
+                if (Token.Equals(packet.Token)) return;
                 if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
                     oc.UpdateTransform(packet);
@@ -112,13 +115,23 @@ public class NetworkManager : GameManager
                 Crate[] crates = JsonConvert.DeserializeObject<Crate[]>(packet.Crates);
                 foreach (var crate in crates)
                 {
+                    if (Token.Equals(crate.Id))
+                    {
+                        playerCrate = crate;
+                        interfaceManager.DrugsText(crate.Drugs.ToString());
+                        interfaceManager.EvidenceText(crate.Evidence.ToString());
+                        if (crate.Access == AccessCode.Robs && crate.Role == RoleCode._1)
+                        {
+
+                        }
+                    }
+
                     if (crate.Role == RoleCode.Null)
                     {
+                        exportScore += crate.Score;
                         if (gameCrates.TryGetValue(crate.Id, out CrateController cc))
                         {
-                            cc.crate = crate;
-                            exportScore += crate.Score;
-                            // interfaceManager
+                            cc.SetCrate(crate);
                         }
                         else
                         {
@@ -126,20 +139,25 @@ public class NetworkManager : GameManager
                             if (crate.Access == AccessCode.Cops) prefab = prefabCopCrate;
                             if (crate.Access == AccessCode.Robs) prefab = prefabRobCrate;
                             GameObject obj = Instantiate(prefab, new Vector3(crate.PosX, crate.PosY, crate.PosZ), Quaternion.Euler(crate.RotX, crate.RotY, crate.RotZ));
+                            var crateController = obj.GetComponent<CrateController>();
+                            crateController.SetCrate(crate);
+
+                            GameObject popup = Instantiate(prefabCratePopup, interfaceManager.locationPanel.transform);
+                            var cratePopup = popup.GetComponent<CratePopup>();
+                            cratePopup.crateController = crateController;
+                            cratePopup.networkManager = this;
                             // obj.name = crate.Id;
-                            gameCrates.Add(crate.Id, obj.GetComponent<CrateController>());
+                            gameCrates.Add(crate.Id, crateController);
                         }
                     }
                 }
+                interfaceManager.ExportsText(exportScore.ToString());
             }
             else if (packet.Type == PacketType.Action)
             {
                 if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    if (UpdateGameState(packet, oc))
-                    {
-                        SendGameJson();
-                    }
+                    UpdateGameState(packet, oc);
                 }
             }
             else
@@ -156,12 +174,12 @@ public class NetworkManager : GameManager
         if (isRunning)
         {
             ResetGameState();
-            interfaceManager.StartButtonText("Reset Game");
+            interfaceManager.StartButtonText("Start Game");
         }
         else
         {
             SetupGameState(otherPlayers, Token);
-            interfaceManager.StartButtonText("Start Game");
+            interfaceManager.StartButtonText("Reset Game");
         }
     }
 
@@ -190,33 +208,51 @@ public class NetworkManager : GameManager
 
     async void SendGameJson()
     {
-        if (IsServer)
+        if (WebSocket != null && Token != null && isRunning)
         {
-            interfaceManager.SetupIsServerView();
-            if (WebSocket != null && Token != null && isRunning)
+            if (WebSocket.State == WebSocketState.Open)
             {
-                if (WebSocket.State == WebSocketState.Open)
-                {
-                    Crate[] crates = new Crate[cratesHolder.Count];
-                    cratesHolder.Values.CopyTo(crates, 0);
-                    var packet = new GameStateJson(JsonConvert.SerializeObject(crates));
-                    string json = JsonConvert.SerializeObject(packet);
-                    await WebSocket.SendText(json);
-                }
+                var cratesHolder = GetCratesHolder();
+                Crate[] crates = new Crate[cratesHolder.Count];
+                cratesHolder.Values.CopyTo(crates, 0);
+                var packet = new GameStateJson(JsonConvert.SerializeObject(crates));
+                string json = JsonConvert.SerializeObject(packet);
+                await WebSocket.SendText(json);
             }
         }
     }
 
-    public async void SendActionJson()
+    async void SendActionJson(ActionType action)
     {
-        // var packet = new GameStateJson(JsonConvert.SerializeObject());
-        // string json = JsonConvert.SerializeObject(packet);
-        await WebSocket.SendText("");
+        var packet = new ActionJson(action, ServerToken);
+        string json = JsonConvert.SerializeObject(packet);
+        await WebSocket.SendText(json);
     }
 
-    public void ToggleMic(bool toggle)
+    public void ValidateAction(CrateController crate, AccessCode access)
     {
-        // enableMic = toggle;
+        if (playerCrate != null)
+        {
+            var action = DetermineAction(playerCrate, crate.Crate, access);
+            if (IsServer)
+            {
+                UpdateGameStateServer(playerCrate.Id, crate.Crate.Id, action);
+            }
+            else
+            {
+                SendActionJson(action);
+            }
+        }
+    }
+
+    ActionType DetermineAction(Crate player, Crate crate, AccessCode access)
+    {
+        // TODO: Use crates for skill checking?
+        if (player.Drugs > 0 && access == AccessCode.Robs) return ActionType.StoreDrugs;
+        if (player.Drugs == 0 && access == AccessCode.Robs) return ActionType.GetDrugs;
+        if (player.Evidence > 0 && access == AccessCode.Cops) return ActionType.StoreEvidence;
+        if (player.Evidence == 0 && access == AccessCode.Cops) return ActionType.GetEvidence;
+        return ActionType.Null;
     }
 }
 
@@ -278,6 +314,20 @@ public class GameStateJson
     {
         Type = PacketType.GameState;
         Crates = crates;
+    }
+}
+
+public class ActionJson
+{
+    public PacketType Type { get; set; }
+    public ActionType Action { get; set; }
+    public string Dest { get; set; }
+
+    public ActionJson(ActionType action, string dest)
+    {
+        Type = PacketType.Action;
+        Action = action;
+        Dest = dest;
     }
 }
 

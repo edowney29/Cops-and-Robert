@@ -6,11 +6,8 @@ public class GameManager : MonoBehaviour
     float gameTimer = 0f, tickTimer = 0f;
     protected bool isRunning = false;
 
-    // List<string> exportCrates = new List<string>();
-    // List<float> exportTimers = new List<float>();
-
     Dictionary<string, List<float>> exportHolder = new Dictionary<string, List<float>>();
-    protected Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
+    Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
 
     void Update()
     {
@@ -26,11 +23,18 @@ public class GameManager : MonoBehaviour
                     export.Value.RemoveAll(timer =>
                     {
                         timer += Time.deltaTime;
+                        Debug.Log(export.Key);
+                        Debug.Log(timer);
                         return crate.ScoreDrug(timer);
                     });
                 }
             }
         }
+    }
+
+    protected Dictionary<string, Crate> GetCratesHolder()
+    {
+        return cratesHolder;
     }
 
     protected void ResetGameState()
@@ -43,7 +47,7 @@ public class GameManager : MonoBehaviour
     {
         gameTimer = 0f;
         tickTimer = 0f;
-        var names = new PlayerNameSetter().Names;
+        var names = new PlayerNames().Names;
 
         cratesHolder.Clear();
         Crate mycrate = new Crate();
@@ -59,10 +63,9 @@ public class GameManager : MonoBehaviour
         {
             Crate crate = new Crate();
             mycrate.Id = player.Key;
-            mycrate.Display = names[index + 1];
+            mycrate.Display = names[++index];
             cratesHolder.Add(player.Key, crate);
             playerList.Add(player.Key);
-            index += 1;
         }
 
         for (int i = 0; i < playerList.Count; ++i)
@@ -74,10 +77,13 @@ public class GameManager : MonoBehaviour
         }
 
         float rolePercent = Random.value;
-        for (int i = 0; i < playerList.Count; i += 1)
+        for (int i = 0; i < playerList.Count; ++i)
         {
             if (cratesHolder.TryGetValue(playerList[i], out Crate player))
             {
+                if (i % 2 == 0) player.Access = AccessCode.Robs;
+                else player.Access = AccessCode.Cops;
+
                 if (i == 0 || i == 1) player.Role = RoleCode._1;
                 else if (i == 2 || i == 3) player.Role = RoleCode._2;
                 // else if (i == 4 || i == 5) player.Role = RoleCode._3;
@@ -88,7 +94,7 @@ public class GameManager : MonoBehaviour
         }
 
         SetupCreates();
-        InvokeRepeating("UpdateCrateTimers", 0f, 180f);
+        InvokeRepeating("UpdateCrateTimers", 0f, 60f);
         isRunning = true;
     }
 
@@ -105,7 +111,7 @@ public class GameManager : MonoBehaviour
         int index = 0;
         foreach (var _crate in crates)
         {
-            var cc = _crate.GetComponent<CrateController>();
+            // var cc = _crate.GetComponent<CrateController>();
             Crate crate = new Crate();
             crate.Id = System.Guid.NewGuid().ToString();
             crate.Display = "Crate";
@@ -117,17 +123,18 @@ public class GameManager : MonoBehaviour
                 exportHolder.Add(crate.Id, new List<float>());
                 crate.AddExportTimer += AddExportTimer;
                 crate.RemoveExportTimer += RemoveExportTimer;
+                crate.Display = "Exports";
             }
             cratesHolder.Add(crate.Id, crate);
-            cc.crate = crate;
+            // cc.SetCrate(crate);
             _crate.SetActive(false);
             index += 1;
         }
 
-        var rcrates = GameObject.FindGameObjectsWithTag("Rob Crate");
+        var rcrates = GameObject.FindGameObjectsWithTag("RobCrate");
         foreach (var _crate in rcrates)
         {
-            var cc = _crate.GetComponent<CrateController>();
+            // var cc = _crate.GetComponent<CrateController>();
             Crate crate = new Crate();
             crate.Id = System.Guid.NewGuid().ToString();
             crate.Display = "Drug Stash";
@@ -137,10 +144,10 @@ public class GameManager : MonoBehaviour
             _crate.SetActive(false);
         }
 
-        var ccrates = GameObject.FindGameObjectsWithTag("Cop Crate");
+        var ccrates = GameObject.FindGameObjectsWithTag("CopCrate");
         foreach (var _crate in ccrates)
         {
-            var cc = _crate.GetComponent<CrateController>();
+            // var cc = _crate.GetComponent<CrateController>();
             Crate crate = new Crate();
             crate.Id = System.Guid.NewGuid().ToString();
             crate.Display = "Evidence Locker";
@@ -153,7 +160,6 @@ public class GameManager : MonoBehaviour
 
     protected bool UpdateGameState(PlayerPacket packet, OtherController oc)
     {
-        // ValidateAction(oc.gameObject);
         if (cratesHolder.TryGetValue(packet.Token, out Crate player))
         {
             if (oc.crateList.Count == 0) // TODO: Handle doing skills better
@@ -168,6 +174,15 @@ public class GameManager : MonoBehaviour
                     return crate.DoAction(player, packet.Action);
                 }
             }
+        }
+        return false;
+    }
+
+    protected bool UpdateGameStateServer(string token, string id, ActionType action)
+    {
+        if (cratesHolder.TryGetValue(token, out Crate player) && cratesHolder.TryGetValue(id, out Crate crate))
+        {
+            return crate.DoAction(player, action);
         }
         return false;
     }
@@ -199,13 +214,6 @@ public class GameManager : MonoBehaviour
             timers.RemoveAt(timers.Count - 1);
         }
     }
-
-
-    // bool ValidateAction(GameObject gameObject)
-    // {
-    //     var colliders = Physics.OverlapSphere(gameObject.transform.position, 0.0f);
-    //     return false;
-    // }
 }
 
 public enum AccessCode
@@ -277,7 +285,7 @@ public class Crate
 
     public bool ScoreDrug(float timer)
     {
-        if (Drugs > 0 && timer > 180f)
+        if (Drugs > 0 && timer > 60f)
         {
             Drugs -= 1;
             Score += 1;
@@ -288,6 +296,7 @@ public class Crate
 
     public bool DoAction(Crate player, ActionType action)
     {
+        Debug.Log("[ACTION]: " + player.Access + " - " + player.Role + " - " + action);
         // Crate has Drugs --- Player has no Drugs
         if (action == ActionType.GetDrugs && Drugs > 0 && player.Drugs == 0 && (player.Access == AccessCode.Robs || player.Role == RoleCode._3 || player.Role == RoleCode._4))
         {
