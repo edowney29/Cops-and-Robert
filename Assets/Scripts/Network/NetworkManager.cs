@@ -27,8 +27,8 @@ public class NetworkManager : GameManager
         interfaceManager = GetComponent<InterfaceManager>();
         comms = GetComponent<Dissonance.DissonanceComms>();
 
-        InvokeRepeating("SendPlayerJSON", 0f, 0.33333334f);
-        InvokeRepeating("SendGameJSON", 0f, 1f);
+        InvokeRepeating("SendPlayerJson", 0f, 0.33333334f);
+        InvokeRepeating("SendGameJson", 0f, 1f);
     }
 
     public async void StartWebSocket()
@@ -74,88 +74,78 @@ public class NetworkManager : GameManager
             }
 
             IsServer = Token.Equals(ServerToken);
-            if (IsServer)
-                if (packet.Type == PacketType.Player)
+            if (packet.Type == PacketType.Player)
+            {
+                if (IsServer) return;
+                if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    if (IsServer) return;
-                    if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
-                    {
-                        oc.UpdateTransform(packet);
-                    }
-                    else
-                    {
-                        GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
-                        // obj.name = packet.Token;
-                        obj.GetComponent<VoiceController>().StartVoice(packet.Token);
-                        otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
-                    }
+                    oc.UpdateTransform(packet);
                 }
-                else if (packet.Type == PacketType.Voice)
+                else
                 {
-                    if (IsServer && !packet.IsServer && !packet.IsP2P)
-                    {
-                        // Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
-                        voiceHolderServer.Add(packet);
-                    }
-                    else if (packet.IsServer || packet.IsP2P)
-                    {
-                        // Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
-                        voiceHolderClient.Add(packet);
-                    }
-                    else
-                    {
-
-                    }
+                    GameObject obj = Instantiate(prefabOtherPlayer, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
+                    // obj.name = packet.Token;
+                    obj.GetComponent<VoiceController>().StartVoice(packet.Token);
+                    otherPlayers.Add(packet.Token, obj.GetComponent<OtherController>());
                 }
-                else if (packet.Type == PacketType.GameState)
+            }
+            else if (packet.Type == PacketType.Voice)
+            {
+                if (IsServer && !packet.IsServer && !packet.IsP2P)
                 {
-                    // Debug.Log(packet.Crates);
-                    if (IsServer && !packet.IsServer)
-                    {
-                        if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
-                        {
-                            if (UpdateGameState(packet, oc))
-                            {
-                                SendGameJSON();
-                            }
-                        }
-                    }
-                    else if (packet.IsServer)
-                    {
-                        int exportScore = 0;
-                        Crate[] crates = JsonConvert.DeserializeObject<Crate[]>(packet.Crates);
-                        foreach (var crate in crates)
-                        {
-                            if (crate.Role == RoleCode.Null)
-                            {
-                                Debug.Log(crate.Id);
-                                // if (gameCrates.TryGetValue(crate.Id, out CrateController cc))
-                                // {
-                                //     cc.crate = crate;
-                                //     exportScore += crate.Score;
-                                //     // interfaceManager
-                                // }
-                                // else
-                                // {
-                                //     var prefab = prefabCrate;
-                                //     if (crate.Access == AccessCode.Cops) prefab = prefabCopCrate;
-                                //     if (crate.Access == AccessCode.Robs) prefab = prefabRobCrate;
-                                //     GameObject obj = Instantiate(prefab, new Vector3(packet.PosX, packet.PosY, packet.PosZ), Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ));
-                                //     // obj.name = packet.Token;
-                                //     gameCrates.Add(packet.Token, obj.GetComponent<CrateController>());
-                                // }
-                            }
-                        }
-                    }
-                    else
-                    {
-
-                    }
+                    // Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
+                    voiceHolderServer.Add(packet);
+                }
+                else if (packet.IsServer || packet.IsP2P)
+                {
+                    // Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
+                    voiceHolderClient.Add(packet);
                 }
                 else
                 {
 
                 }
+            }
+            else if (packet.Type == PacketType.GameState)
+            {
+                int exportScore = 0;
+                Crate[] crates = JsonConvert.DeserializeObject<Crate[]>(packet.Crates);
+                foreach (var crate in crates)
+                {
+                    if (crate.Role == RoleCode.Null)
+                    {
+                        if (gameCrates.TryGetValue(crate.Id, out CrateController cc))
+                        {
+                            cc.crate = crate;
+                            exportScore += crate.Score;
+                            // interfaceManager
+                        }
+                        else
+                        {
+                            var prefab = prefabCrate;
+                            if (crate.Access == AccessCode.Cops) prefab = prefabCopCrate;
+                            if (crate.Access == AccessCode.Robs) prefab = prefabRobCrate;
+                            GameObject obj = Instantiate(prefab, new Vector3(crate.PosX, crate.PosY, crate.PosZ), Quaternion.Euler(crate.RotX, crate.RotY, crate.RotZ));
+                            // obj.name = crate.Id;
+                            gameCrates.Add(crate.Id, obj.GetComponent<CrateController>());
+                        }
+                    }
+                }
+            }
+            else if (packet.Type == PacketType.Action)
+            {
+                if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
+                {
+                    if (UpdateGameState(packet, oc))
+                    {
+                        SendGameJson();
+                    }
+                }
+            }
+            else
+            {
+
+            }
         };
 
         await WebSocket.Connect();
@@ -179,7 +169,7 @@ public class NetworkManager : GameManager
         interfaceManager.ShowGame();
     }
 
-    async void SendPlayerJSON()
+    async void SendPlayerJson()
     {
         if (WebSocket != null && player != null && Token != null)
         {
@@ -192,7 +182,7 @@ public class NetworkManager : GameManager
         }
     }
 
-    async void SendGameJSON()
+    async void SendGameJson()
     {
         if (IsServer)
         {
@@ -211,6 +201,13 @@ public class NetworkManager : GameManager
         }
     }
 
+    async void SendActionJson()
+    {
+        var packet = new GameStateJson(JsonConvert.SerializeObject());
+        string json = JsonConvert.SerializeObject(packet);
+        await WebSocket.SendText(json);
+    }
+
     public void ToggleMic(bool toggle)
     {
         // enableMic = toggle;
@@ -222,6 +219,7 @@ public enum PacketType
     Player,
     Voice,
     GameState,
+    Action
 }
 
 public class PlayerJson
