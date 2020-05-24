@@ -49,8 +49,28 @@ public class InterfaceManager : MonoBehaviour
     }
 
     public void SetupIsServerView()
-    {    
+    {
         startGameButton.SetActive(true);
         cratesObject.SetActive(true);
+    }
+
+    public void StartButtonText(string text)
+    {
+        startGameButton.GetComponentInChildren<TMP_Text>().SetText(text);
+    }
+
+    public void ExportsText(string text)
+    {
+        exportsCountText.SetText("Exports: " + text);
+    }
+
+    public void DrugsText(string text)
+    {
+        drugsCountText.SetText("Drugs: " + text);
+    }
+
+    public void EvidenceText(string text)
+    {
+        evidenceCountText.SetText("Evidence: " + text);
     }
 }

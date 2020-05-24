@@ -154,9 +154,15 @@ public class NetworkManager : GameManager
     public void StartGame()
     {
         if (isRunning)
+        {
             ResetGameState();
+            interfaceManager.StartButtonText("Reset Game");
+        }
         else
+        {
             SetupGameState(otherPlayers, Token);
+            interfaceManager.StartButtonText("Start Game");
+        }
     }
 
     void SpawnPlayer()
@@ -171,7 +177,7 @@ public class NetworkManager : GameManager
 
     async void SendPlayerJson()
     {
-        if (WebSocket != null && player != null && Token != null)
+        if (WebSocket != null && Token != null && player != null)
         {
             playerJson.UpdateTransform(player.transform);
             if (WebSocket.State == WebSocketState.Open)
@@ -201,11 +207,11 @@ public class NetworkManager : GameManager
         }
     }
 
-    async void SendActionJson()
+    public async void SendActionJson()
     {
-        var packet = new GameStateJson(JsonConvert.SerializeObject());
-        string json = JsonConvert.SerializeObject(packet);
-        await WebSocket.SendText(json);
+        // var packet = new GameStateJson(JsonConvert.SerializeObject());
+        // string json = JsonConvert.SerializeObject(packet);
+        await WebSocket.SendText("");
     }
 
     public void ToggleMic(bool toggle)
