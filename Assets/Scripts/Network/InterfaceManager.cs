@@ -5,7 +5,7 @@ public class InterfaceManager : MonoBehaviour
 {
     public GameObject menuPanel, locationPanel, startGameButton, cratesObject;
     public TMP_InputField usernameInput, passwordInput;
-    public TMP_Text locationText, drugsCountText, evidenceCountText, exportsCountText;
+    public TMP_Text locationText, drugsCountText, evidenceCountText, exportsCountText, roleNameText, timerText;
 
     public string RoomId { get; private set; }
     public string Username { get; private set; }
@@ -51,23 +51,54 @@ public class InterfaceManager : MonoBehaviour
         cratesObject.SetActive(true);
     }
 
-    public void StartButtonText(string text)
+    public void StartButtonText(bool isRunning)
     {
-        startGameButton.GetComponentInChildren<TMP_Text>().SetText(text);
+        if (isRunning)
+        {
+            startGameButton.GetComponentInChildren<TMP_Text>().SetText("Start Game");
+        }
+        else
+        {
+            startGameButton.GetComponentInChildren<TMP_Text>().SetText("Reset Game");
+        }
     }
 
-    public void ExportsText(string text)
+    public void ExportsText(int count)
     {
-        exportsCountText.SetText("Exports: " + text);
+        exportsCountText.SetText("Exports: " + count);
     }
 
-    public void DrugsText(string text)
+    public void DrugsText(int count)
     {
-        drugsCountText.SetText("Drugs: " + text);
+        drugsCountText.SetText("Drugs: " + count);
     }
 
-    public void EvidenceText(string text)
+    public void EvidenceText(int count)
     {
-        evidenceCountText.SetText("Evidence: " + text);
+        evidenceCountText.SetText("Evidence: " + count);
+    }
+
+    public void RoleNameText(AccessCode access, RoleCode role)
+    {
+        string text = "Role Name";
+        if (access == AccessCode.Cops)
+        {
+            if (role == RoleCode._1) text = "Sheriff";
+            else if (role == RoleCode._2) text = "Police Office";
+            else if (role == RoleCode._3) text = "Under Cover Cop";
+            else if (role == RoleCode._4) text = "Informant";
+            else if (role == RoleCode._5) text = "Rookie";
+            else text = "Rookie";
+        }
+        if (access == AccessCode.Robs)
+        {
+            if (role == RoleCode._1) text = "Robert";
+            else if (role == RoleCode._2) text = "Criminal";
+            else if (role == RoleCode._3) text = "Mob Cop";
+            else if (role == RoleCode._4) text = "Crooked Cop";
+            else if (role == RoleCode._5) text = "Street Thug";
+            else text = "Street Thug";
+        }
+        roleNameText.SetText(text);
     }
 }

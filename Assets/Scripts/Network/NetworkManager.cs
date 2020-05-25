@@ -119,8 +119,9 @@ public class NetworkManager : GameManager
                     if (Token.Equals(crate.Id))
                     {
                         playerCrate = crate;
-                        interfaceManager.DrugsText(crate.Drugs.ToString());
-                        interfaceManager.EvidenceText(crate.Evidence.ToString());
+                        interfaceManager.DrugsText(crate.Drugs);
+                        interfaceManager.EvidenceText(crate.Evidence);
+                        interfaceManager.RoleNameText(crate.Access, crate.Role);
                         var meshes = player.GetComponentsInChildren<MeshRenderer>();
                         meshes[meshes.Length - 1].material = crate.Access == AccessCode.Cops ? blueVisor : redVisor;
                         if (crate.Access == AccessCode.Robs && crate.Role == RoleCode._1)
@@ -166,7 +167,7 @@ public class NetworkManager : GameManager
                         }
                     }
                 }
-                interfaceManager.ExportsText(exportScore.ToString());
+                interfaceManager.ExportsText(exportScore);
             }
             else if (packet.Type == PacketType.Action)
             {
@@ -189,13 +190,13 @@ public class NetworkManager : GameManager
         if (isRunning)
         {
             ResetGameState();
-            interfaceManager.StartButtonText("Start Game");
         }
         else
         {
             SetupGameState(otherPlayers, Token);
-            interfaceManager.StartButtonText("Reset Game");
         }
+
+        interfaceManager.StartButtonText(isRunning);
     }
 
     void SpawnPlayer()
