@@ -6,28 +6,18 @@ public class GameManager : MonoBehaviour
     float gameTimer = 0f, tickTimer = 0f;
     protected bool isRunning = false;
 
-    Dictionary<string, List<float>> exportHolder = new Dictionary<string, List<float>>();
     Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
 
     void Update()
     {
+        var time = Time.deltaTime;
         if (isRunning)
         {
-            gameTimer += Time.deltaTime;
-            tickTimer += Time.deltaTime;
-
-            foreach (var export in exportHolder)
+            gameTimer += time;
+            // tickTimer += Time.deltaTime;
+            foreach (var crate in cratesHolder.Values)
             {
-                if (cratesHolder.TryGetValue(export.Key, out Crate crate))
-                {
-                    export.Value.RemoveAll(timer =>
-                    {
-                        timer += Time.deltaTime;
-                        Debug.Log(export.Key);
-                        Debug.Log(timer);
-                        return crate.ScoreDrug(timer);
-                    });
-                }
+                if (crate.IsExport) crate.UpdateTimers(time);
             }
         }
     }
@@ -46,7 +36,7 @@ public class GameManager : MonoBehaviour
     protected void SetupGameState(Dictionary<string, OtherController> players, string token)
     {
         gameTimer = 0f;
-        tickTimer = 0f;
+        // tickTimer = 0f;
         var names = new PlayerNames().Names;
 
         cratesHolder.Clear();
@@ -120,9 +110,8 @@ public class GameManager : MonoBehaviour
             if (index == 0)
             {
                 crate.IsExport = true;
-                exportHolder.Add(crate.Id, new List<float>());
-                crate.AddExportTimer += AddExportTimer;
-                crate.RemoveExportTimer += RemoveExportTimer;
+                // crate.AddExportTimer += AddExportTimer;
+                // crate.RemoveExportTimer += RemoveExportTimer;
                 crate.Display = "Exports";
             }
             cratesHolder.Add(crate.Id, crate);
@@ -190,18 +179,12 @@ public class GameManager : MonoBehaviour
 
     void AddExportTimer(object sender, Crate crate)
     {
-        if (exportHolder.TryGetValue(crate.Id, out List<float> timers))
-        {
-            timers.Add(0f);
-        }
+
     }
 
     void RemoveExportTimer(object sender, Crate crate)
     {
-        if (exportHolder.TryGetValue(crate.Id, out List<float> timers))
-        {
-            timers.RemoveAt(timers.Count - 1);
-        }
+
     }
 }
 
@@ -253,9 +236,10 @@ public class Crate
     public bool IsExport { get; set; }
     public RoleCode Role { get; set; }
     public AccessCode Access { get; set; }
+    List<float> Timers = new List<float>();
 
-    public event System.EventHandler<Crate> AddExportTimer;
-    public event System.EventHandler<Crate> RemoveExportTimer;
+    // public event System.EventHandler<Crate> AddExportTimer;
+    // public event System.EventHandler<Crate> RemoveExportTimer;
 
     public void UpdateTransform(Transform transform)
     {
@@ -265,6 +249,15 @@ public class Crate
         RotX = transform.rotation.eulerAngles.x;
         RotY = transform.rotation.eulerAngles.y;
         RotZ = transform.rotation.eulerAngles.z;
+    }
+
+    public void UpdateTimers(float addTime)
+    {
+        for (int i = 0; i < Timers.Count; ++i)
+        {
+            Timers[i] += addTime;
+        }
+        Timers.RemoveAll(timer => ScoreDrug(timer));
     }
 
     public bool CanRole1View(Crate player)
@@ -291,7 +284,8 @@ public class Crate
         {
             Drugs -= 1;
             player.Drugs += 1;
-            if (IsExport) RemoveExportTimer?.Invoke(this, this);
+            // if (IsExport) RemoveExportTimer?.Invoke(this, this);
+            if (IsExport) Timers.RemoveAt(Timers.Count - 1);
             return true;
         }
 
@@ -311,7 +305,8 @@ public class Crate
             if (Access == AccessCode.Robs) Evidence = 0; // Rob Crate has no Evidence
             if (Access == AccessCode.Null && Evidence > 1) Evidence = 1; // Normal Crate max 1 Evidence
 
-            if (IsExport) AddExportTimer?.Invoke(this, this);
+            // if (IsExport) AddExportTimer?.Invoke(this, this);
+            if (IsExport) Timers.Add(0f);
             return true;
         }
 

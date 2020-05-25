@@ -54,12 +54,22 @@ public class CratePopup : MonoBehaviour
             display.SetText(crateController.Crate.Display);
             drugs.SetText("Drugs: " + crateController.Crate.Drugs);
             evidence.SetText("Evidence: " + crateController.Crate.Evidence);
+
             if (networkManager.playerCrate.Access == AccessCode.Robs && networkManager.playerCrate.Role == RoleCode._1 && crateController.Crate.IsExport)
             {
                 display.enabled = true;
-                // drugs.enabled = true;
-                // evidence.enabled = true;
-                // image.enabled = true;
+            }
+            if (networkManager.playerCrate.Access == AccessCode.Cops && crateController.Crate.IsExport)
+            {
+                display.SetText("Crate");
+            }
+            if (networkManager.playerCrate.Access == AccessCode.Cops)
+            {
+                drugs.enabled = false;
+            }
+            if (networkManager.playerCrate.Access == AccessCode.Robs)
+            {
+                evidence.enabled = false;
             }
         }
     }

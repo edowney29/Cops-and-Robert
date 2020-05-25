@@ -5,17 +5,16 @@ using DG.Tweening;
 public class OtherController : MonoBehaviour
 {
     string username;
-    Vector3 position, rotation;
-    float destroyTimer = 0f, waitTime = 0.33333334f, spinTime = 0.22222223f;
-
+    Vector3 realPosition, lastRealPosition;
+    Quaternion realRotation, lastRealRotation;
+    float destroyTimer = 0f, waitTime = 0.33333334f, spinTime = 0.22222223f, timeStartedLerping = 0f;
+    bool isLerpingPosition = false, isLerpingRotation = false;
     public List<string> crateList = new List<string>();
 
     void Start()
     {
-        position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-        rotation = new Vector3(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
-
-        InvokeRepeating("AsyncUpdate", 0f, waitTime);
+        // position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+        // rotation = new Vector3(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
     }
 
     void Update()
@@ -29,21 +28,46 @@ public class OtherController : MonoBehaviour
         }
     }
 
-    void AsyncUpdate()
+    void FixedUpdate()
     {
-        transform.DOMove(position, waitTime, false);
-        transform.DORotate(rotation, spinTime, RotateMode.Fast);
+        if (isLerpingPosition)
+        {
+            float lerpPercentage = (Time.time - timeStartedLerping) / waitTime;
+            transform.position = Vector3.Lerp(lastRealPosition, realPosition, lerpPercentage);
+        }
+        if (isLerpingRotation)
+        {
+            float lerpPercentage = (Time.time - timeStartedLerping) / spinTime;
+            transform.rotation = Quaternion.Lerp(lastRealRotation, realRotation, lerpPercentage);
+        }
+
+        // transform.DOMove(position, waitTime, false);
+        // transform.DORotate(rotation, spinTime, RotateMode.Fast);
     }
 
     public void UpdateTransform(PlayerPacket packet)
     {
+        timeStartedLerping = Time.time;
+        lastRealPosition = transform.position;
+        lastRealRotation = transform.rotation;
+        realPosition = new Vector3(packet.PosX, packet.PosY, packet.PosZ);
+        realRotation = Quaternion.Euler(packet.RotX, packet.RotY, packet.RotZ);
+        if (realPosition != transform.position)
+        {
+            isLerpingPosition = true;
+        }
+        if (realRotation.eulerAngles != transform.rotation.eulerAngles)
+        {
+            isLerpingRotation = true;
+        }
+
         username = packet.Username;
-        position.x = packet.PosX;
-        position.y = packet.PosY;
-        position.z = packet.PosZ;
-        rotation.x = packet.RotX;
-        rotation.y = packet.RotY;
-        rotation.z = packet.RotZ;
+        // position.x = packet.PosX;
+        // position.y = packet.PosY;
+        // position.z = packet.PosZ;
+        // rotation.x = packet.RotX;
+        // rotation.y = packet.RotY;
+        // rotation.z = packet.RotZ;
         destroyTimer = 0f;
     }
 }

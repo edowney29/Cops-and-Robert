@@ -592,7 +592,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   moveState: 0
-  baseSpeed: 2
+  baseSpeed: 1.6
   runSpeed: 4
   rotateSpeed: 2
   mount: 0
