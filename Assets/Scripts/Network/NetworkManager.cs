@@ -10,15 +10,15 @@ public class NetworkManager : GameManager
     [SerializeField]
     Material blueVisor, redVisor;
 
-    GameObject player;
-    Crate playerCrate;
     PlayerJson playerJson = new PlayerJson();
     Dictionary<string, OtherController> otherPlayers = new Dictionary<string, OtherController>();
     Dictionary<string, CrateController> gameCrates = new Dictionary<string, CrateController>();
     public List<PlayerPacket> voiceHolderClient = new List<PlayerPacket>();
     public List<PlayerPacket> voiceHolderServer = new List<PlayerPacket>();
 
-    InterfaceManager interfaceManager { get; set; }
+    public GameObject player { get; private set; }
+    public Crate playerCrate { get; private set; }
+    public InterfaceManager interfaceManager { get; private set; }
     public Dissonance.DissonanceComms comms { get; private set; }
     public WebSocket WebSocket { get; private set; }
     public string Token { get; private set; }
@@ -147,7 +147,11 @@ public class NetworkManager : GameManager
                         exportScore += crate.Score;
                         if (gameCrates.TryGetValue(crate.Id, out CrateController cc))
                         {
-                            if (cc.isActiveAndEnabled) cc.SetCrate(crate);
+                            if (cc.isActiveAndEnabled)
+                            {
+                                cc.SetCrate(crate);
+                                if (crate.IsExport) { }
+                            }
                         }
                         else
                         {

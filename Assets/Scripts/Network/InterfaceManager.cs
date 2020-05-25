@@ -55,11 +55,11 @@ public class InterfaceManager : MonoBehaviour
     {
         if (isRunning)
         {
-            startGameButton.GetComponentInChildren<TMP_Text>().SetText("Start Game");
+            startGameButton.GetComponentInChildren<TMP_Text>().SetText("Reset Game");
         }
         else
         {
-            startGameButton.GetComponentInChildren<TMP_Text>().SetText("Reset Game");
+            startGameButton.GetComponentInChildren<TMP_Text>().SetText("Start Game");
         }
     }
 

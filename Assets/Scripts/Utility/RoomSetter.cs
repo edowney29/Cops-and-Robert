@@ -6,19 +6,19 @@ public class RoomSetter : MonoBehaviour
     string token, roomName;
 
     NetworkManager networkManager;
-    InterfaceManager interfaceManager;
+    // InterfaceManager interfaceManager;
 
     void Start()
     {
         networkManager = FindObjectOfType<NetworkManager>();
-        interfaceManager = FindObjectOfType<InterfaceManager>();
+        // interfaceManager = FindObjectOfType<InterfaceManager>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag.Equals("Player"))
         {
-            interfaceManager.SetLocation(roomName);
+            networkManager.interfaceManager.SetLocation(roomName);
             networkManager.comms.AddToken(token);
             networkManager.comms.RemoveToken("ayy");
         }
@@ -28,7 +28,7 @@ public class RoomSetter : MonoBehaviour
     {
         if (other.gameObject.tag.Equals("Player"))
         {
-            interfaceManager.SetLocation("Proximity");
+            networkManager.interfaceManager.SetLocation("Proximity");
             networkManager.comms.AddToken("ayy");
             networkManager.comms.RemoveToken(token);
         }

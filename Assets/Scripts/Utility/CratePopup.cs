@@ -20,13 +20,6 @@ public class CratePopup : MonoBehaviour
         var veiwportPoint = Camera.main.WorldToViewportPoint(crateController.transform.position);
         var distanceFromCenter = Vector2.Distance(veiwportPoint, Vector2.one * 0.5f);
 
-        if (crateController.Crate != null)
-        {
-            display.SetText(crateController.Crate.Display);
-            drugs.SetText("Drugs: " + crateController.Crate.Drugs);
-            evidence.SetText("Evidence: " + crateController.Crate.Evidence);
-        }
-
         var show = distanceFromCenter < 0.4f;
         var shouldShow = show && crateController.inTrigger;
         display.enabled = shouldShow;
@@ -54,6 +47,20 @@ public class CratePopup : MonoBehaviour
         else
         {
             buttonPressed = false;
+        }
+
+        if (crateController.Crate != null && networkManager.playerCrate != null)
+        {
+            display.SetText(crateController.Crate.Display);
+            drugs.SetText("Drugs: " + crateController.Crate.Drugs);
+            evidence.SetText("Evidence: " + crateController.Crate.Evidence);
+            if (networkManager.playerCrate.Access == AccessCode.Robs && networkManager.playerCrate.Role == RoleCode._1 && crateController.Crate.IsExport)
+            {
+                display.enabled = true;
+                // drugs.enabled = true;
+                // evidence.enabled = true;
+                // image.enabled = true;
+            }
         }
     }
 }
