@@ -14,7 +14,6 @@ public class CrateController : MonoBehaviour
 
         if (other.gameObject.tag.Equals("Player"))
         {
-            // other.GetComponent<ActionController>().crateList.Add(crate.Id);
             inTrigger = true;
         }
     }
@@ -28,7 +27,6 @@ public class CrateController : MonoBehaviour
 
         if (other.gameObject.tag.Equals("Player"))
         {
-            // other.GetComponent<ActionController>().crateList.Remove(crate.Id);
             inTrigger = false;
         }
     }

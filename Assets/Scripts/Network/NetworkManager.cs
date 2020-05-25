@@ -53,6 +53,7 @@ public class NetworkManager : GameManager
             Debug.Log("Connection closed!");
             Token = null;
             comms.enabled = false;
+            isRunning = false;
             // Destroy(player);
             // Destroy(Camera.main.gameObject);
             interfaceManager.ShowMenu();
@@ -64,7 +65,7 @@ public class NetworkManager : GameManager
             // foreach (string json in jsonHolder.Replace("\n", string.Empty).Replace("\r", string.Empty).Replace("}{", "}|{").Split('|'))
             // foreach (string json in Regex.Replace(jsonHolder, "/(\r\n)|\n|\r/gm", "|").Split('|'))
             // foreach (string json in jsonHolder.Split('|'))
-            // {          
+            // {                          
             PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
             Debug.Log("[PACKET]: TYPE_" + packet.Type + " --- " + packet.Token + " --- " + packet.IsServer);
             if (packet.IsServer) ServerToken = packet.Token;
@@ -82,7 +83,7 @@ public class NetworkManager : GameManager
                 if (Token.Equals(packet.Token)) return;
                 if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    oc.UpdateTransform(packet);
+                    if (oc.isActiveAndEnabled) oc.UpdateTransform(packet);
                 }
                 else
                 {
@@ -120,9 +121,23 @@ public class NetworkManager : GameManager
                         playerCrate = crate;
                         interfaceManager.DrugsText(crate.Drugs.ToString());
                         interfaceManager.EvidenceText(crate.Evidence.ToString());
+                        var meshes = player.GetComponentsInChildren<MeshRenderer>();
+                        meshes[meshes.Length - 1].material = crate.Access == AccessCode.Cops ? blueVisor : redVisor;
                         if (crate.Access == AccessCode.Robs && crate.Role == RoleCode._1)
                         {
+                            // TODO: _1 robs export crate outline
+                        }
+                    }
 
+                    if (crate.Role != RoleCode.Null)
+                    {
+                        if (otherPlayers.TryGetValue(crate.Id, out OtherController oc))
+                        {
+                            if (oc.isActiveAndEnabled)
+                            {
+                                var meshes = oc.GetComponentsInChildren<MeshRenderer>();
+                                meshes[meshes.Length - 1].material = crate.Access == AccessCode.Cops ? blueVisor : redVisor;
+                            }
                         }
                     }
 
@@ -131,7 +146,7 @@ public class NetworkManager : GameManager
                         exportScore += crate.Score;
                         if (gameCrates.TryGetValue(crate.Id, out CrateController cc))
                         {
-                            cc.SetCrate(crate);
+                            if (cc.isActiveAndEnabled) cc.SetCrate(crate);
                         }
                         else
                         {
@@ -155,9 +170,9 @@ public class NetworkManager : GameManager
             }
             else if (packet.Type == PacketType.Action)
             {
-                if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
+                if (IsServer && otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    UpdateGameState(packet, oc);
+                    if (oc.isActiveAndEnabled) UpdateGameState(packet, oc);
                 }
             }
             else
@@ -197,9 +212,9 @@ public class NetworkManager : GameManager
     {
         if (WebSocket != null && Token != null && player != null)
         {
-            playerJson.UpdateTransform(player.transform);
             if (WebSocket.State == WebSocketState.Open)
             {
+                playerJson.UpdateTransform(player.transform);
                 string json = JsonConvert.SerializeObject(playerJson);
                 await WebSocket.SendText(json);
             }
@@ -222,9 +237,9 @@ public class NetworkManager : GameManager
         }
     }
 
-    async void SendActionJson(ActionType action)
+    async void SendActionJson(ActionType action, string actionCrate)
     {
-        var packet = new ActionJson(action, ServerToken);
+        var packet = new ActionJson(action, actionCrate, ServerToken);
         string json = JsonConvert.SerializeObject(packet);
         await WebSocket.SendText(json);
     }
@@ -240,7 +255,7 @@ public class NetworkManager : GameManager
             }
             else
             {
-                SendActionJson(action);
+                SendActionJson(action, crate.Crate.Id);
             }
         }
     }
@@ -321,12 +336,14 @@ public class ActionJson
 {
     public PacketType Type { get; set; }
     public ActionType Action { get; set; }
+    public string ActionCrate { get; set; }
     public string Dest { get; set; }
 
-    public ActionJson(ActionType action, string dest)
+    public ActionJson(ActionType action, string actionCrate, string dest)
     {
         Type = PacketType.Action;
         Action = action;
+        ActionCrate = actionCrate;
         Dest = dest;
     }
 }
@@ -346,6 +363,7 @@ public class PlayerPacket
     public float RotY { get; set; }
     public float RotZ { get; set; }
     public byte[] Data { get; set; }
-    public ActionType Action { get; set; }
     public string Crates { get; set; }
+    public ActionType Action { get; set; }
+    public string ActionCrate { get; set; }
 }

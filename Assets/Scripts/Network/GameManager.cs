@@ -43,27 +43,27 @@ public class GameManager : MonoBehaviour
         CancelInvoke("UpdateCrateTimers");
     }
 
-    protected void SetupGameState(Dictionary<string, OtherController> players, string _id)
+    protected void SetupGameState(Dictionary<string, OtherController> players, string token)
     {
         gameTimer = 0f;
         tickTimer = 0f;
         var names = new PlayerNames().Names;
 
         cratesHolder.Clear();
-        Crate mycrate = new Crate();
-        mycrate.Id = _id;
-        mycrate.Display = names[0];
-        cratesHolder.Add(_id, mycrate);
+        Crate _crate = new Crate();
+        _crate.Id = token;
+        _crate.Display = names[0];
+        cratesHolder.Add(token, _crate);
 
         List<string> playerList = new List<string>();
-        playerList.Add(_id);
+        playerList.Add(token);
 
         int index = 0;
         foreach (var player in players)
         {
             Crate crate = new Crate();
-            mycrate.Id = player.Key;
-            mycrate.Display = names[++index];
+            crate.Id = player.Key;
+            crate.Display = names[++index];
             cratesHolder.Add(player.Key, crate);
             playerList.Add(player.Key);
         }
@@ -150,7 +150,7 @@ public class GameManager : MonoBehaviour
             // var cc = _crate.GetComponent<CrateController>();
             Crate crate = new Crate();
             crate.Id = System.Guid.NewGuid().ToString();
-            crate.Display = "Evidence Locker";
+            crate.Display = "Police Locker";
             crate.Access = AccessCode.Cops;
             crate.UpdateTransform(_crate.transform);
             cratesHolder.Add(crate.Id, crate);
@@ -160,20 +160,9 @@ public class GameManager : MonoBehaviour
 
     protected bool UpdateGameState(PlayerPacket packet, OtherController oc)
     {
-        if (cratesHolder.TryGetValue(packet.Token, out Crate player))
+        if (cratesHolder.TryGetValue(packet.Token, out Crate player) && cratesHolder.TryGetValue(packet.ActionCrate, out Crate crate)) // && oc.crateList.Exists(x => x.Equals(packet.ActionCrate)))
         {
-            if (oc.crateList.Count == 0) // TODO: Handle doing skills better
-            {
-                // return player.DoSkill(packet.Action);
-                return true;
-            }
-            else
-            {
-                if (cratesHolder.TryGetValue(oc.crateList[oc.crateList.Count - 1], out Crate crate))
-                {
-                    return crate.DoAction(player, packet.Action);
-                }
-            }
+            return crate.DoAction(player, packet.Action);
         }
         return false;
     }
