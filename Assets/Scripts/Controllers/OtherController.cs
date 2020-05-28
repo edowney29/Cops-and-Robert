@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening;
 
 public class OtherController : MonoBehaviour
 {
@@ -11,21 +10,10 @@ public class OtherController : MonoBehaviour
     bool isLerpingPosition = false, isLerpingRotation = false;
     public List<string> crateList = new List<string>();
 
-    void Start()
-    {
-        // position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-        // rotation = new Vector3(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
-    }
-
     void Update()
     {
         destroyTimer += Time.deltaTime;
-
-        if (destroyTimer > 5f)
-        {
-            Debug.LogWarning(gameObject.name);
-            Destroy(gameObject);
-        }
+        if (destroyTimer > 5f) gameObject.SetActive(false);
     }
 
     void FixedUpdate()
@@ -40,9 +28,6 @@ public class OtherController : MonoBehaviour
             float lerpPercentage = (Time.time - timeStartedLerping) / spinTime;
             transform.rotation = Quaternion.Lerp(lastRealRotation, realRotation, lerpPercentage);
         }
-
-        // transform.DOMove(position, waitTime, false);
-        // transform.DORotate(rotation, spinTime, RotateMode.Fast);
     }
 
     public void UpdateTransform(PlayerPacket packet)
@@ -62,12 +47,6 @@ public class OtherController : MonoBehaviour
         }
 
         username = packet.Username;
-        // position.x = packet.PosX;
-        // position.y = packet.PosY;
-        // position.z = packet.PosZ;
-        // rotation.x = packet.RotX;
-        // rotation.y = packet.RotY;
-        // rotation.z = packet.RotZ;
         destroyTimer = 0f;
     }
 }

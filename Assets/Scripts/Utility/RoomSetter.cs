@@ -5,22 +5,24 @@ public class RoomSetter : MonoBehaviour
     [SerializeField]
     string token, roomName;
 
-    NetworkManager networkManager;
-    // InterfaceManager interfaceManager;
+    // NetworkManager networkManager;
+    Dissonance.DissonanceComms comms;
+    InterfaceManager gui;
 
     void Start()
     {
-        networkManager = FindObjectOfType<NetworkManager>();
-        // interfaceManager = FindObjectOfType<InterfaceManager>();
+        // networkManager = FindObjectOfType<NetworkManager>();
+        comms = FindObjectOfType<Dissonance.DissonanceComms>();
+        gui = FindObjectOfType<InterfaceManager>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag.Equals("Player"))
         {
-            networkManager.interfaceManager.SetLocation(roomName);
-            networkManager.comms.AddToken(token);
-            networkManager.comms.RemoveToken("ayy");
+            gui.SetLocation(roomName);
+            comms.AddToken(token);
+            comms.RemoveToken("ayy");
         }
     }
 
@@ -28,9 +30,9 @@ public class RoomSetter : MonoBehaviour
     {
         if (other.gameObject.tag.Equals("Player"))
         {
-            networkManager.interfaceManager.SetLocation("Proximity");
-            networkManager.comms.AddToken("ayy");
-            networkManager.comms.RemoveToken(token);
+            gui.SetLocation("Proximity");
+            comms.AddToken("ayy");
+            comms.RemoveToken(token);
         }
     }
 }

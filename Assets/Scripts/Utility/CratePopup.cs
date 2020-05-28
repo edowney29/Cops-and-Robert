@@ -14,6 +14,8 @@ public class CratePopup : MonoBehaviour
 
     void Update()
     {
+        if (!crateController.isActiveAndEnabled) gameObject.SetActive(false);
+
         var screenPoint = Camera.main.WorldToScreenPoint(crateController.transform.position);
         GetComponent<RectTransform>().position = screenPoint;
 
@@ -49,25 +51,25 @@ public class CratePopup : MonoBehaviour
             buttonPressed = false;
         }
 
-        if (crateController.Crate != null && networkManager.playerCrate != null)
+        if (crateController.Crate != null && networkManager.MyCrate != null)
         {
             display.SetText(crateController.Crate.Display);
             drugs.SetText("Drugs: " + crateController.Crate.Drugs);
             evidence.SetText("Evidence: " + crateController.Crate.Evidence);
 
-            if (networkManager.playerCrate.Access == AccessCode.Robs && networkManager.playerCrate.Role == RoleCode._1 && crateController.Crate.IsExport)
+            if (networkManager.MyCrate.Access == AccessCode.Robs && networkManager.MyCrate.Role == RoleCode._1 && crateController.Crate.IsExport)
             {
                 display.enabled = true;
             }
-            if (networkManager.playerCrate.Access == AccessCode.Cops && crateController.Crate.IsExport)
+            if (networkManager.MyCrate.Access == AccessCode.Cops && crateController.Crate.IsExport)
             {
                 display.SetText("Crate");
             }
-            if (networkManager.playerCrate.Access == AccessCode.Cops)
+            if (networkManager.MyCrate.Access == AccessCode.Cops)
             {
                 drugs.enabled = false;
             }
-            if (networkManager.playerCrate.Access == AccessCode.Robs)
+            if (networkManager.MyCrate.Access == AccessCode.Robs)
             {
                 evidence.enabled = false;
             }

@@ -3,18 +3,18 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    float gameTimer = 0f, tickTimer = 0f;
-    protected bool isRunning = false;
-
+    [SerializeField]
+    GameObject cratesObject;
+    float gameTimer = 0f;
+    protected bool serverRunning = false;
     Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
 
     void Update()
     {
         var time = Time.deltaTime;
-        if (isRunning)
+        if (serverRunning)
         {
             gameTimer += time;
-            // tickTimer += Time.deltaTime;
             foreach (var crate in cratesHolder.Values)
             {
                 if (crate.IsExport) crate.UpdateTimers(time);
@@ -29,20 +29,30 @@ public class GameManager : MonoBehaviour
 
     protected void ResetGameState()
     {
-        isRunning = false;
+        serverRunning = false;
+        foreach (var crate in GameObject.FindGameObjectsWithTag("RobCrate"))
+        {
+            crate.SetActive(false);
+        }
+        foreach (var crate in GameObject.FindGameObjectsWithTag("CopCrate"))
+        {
+            crate.SetActive(false);
+        }
+        foreach (var crate in GameObject.FindGameObjectsWithTag("Crate"))
+        {
+            crate.SetActive(false);
+        }
         CancelInvoke("UpdateCrateTimers");
     }
 
     protected void SetupGameState(Dictionary<string, OtherController> players, string token)
     {
-        gameTimer = 0f;
-        // tickTimer = 0f;
-        var names = new PlayerNames().Names;
-
         cratesHolder.Clear();
+        string[] displayNames = new PlayerNames().Names;
+
         Crate _crate = new Crate();
         _crate.Id = token;
-        _crate.Display = names[0];
+        _crate.Display = displayNames[0];
         cratesHolder.Add(token, _crate);
 
         List<string> playerList = new List<string>();
@@ -53,7 +63,7 @@ public class GameManager : MonoBehaviour
         {
             Crate crate = new Crate();
             crate.Id = player.Key;
-            crate.Display = names[++index];
+            crate.Display = displayNames[++index];
             cratesHolder.Add(player.Key, crate);
             playerList.Add(player.Key);
         }
@@ -84,12 +94,17 @@ public class GameManager : MonoBehaviour
         }
 
         SetupCreates();
-        InvokeRepeating("UpdateCrateTimers", 0f, 60f);
-        isRunning = true;
+        gameTimer = 0f;
+        serverRunning = true;
     }
 
     void SetupCreates()
     {
+        for (int i = 0; i < cratesObject.transform.childCount; ++i)
+        {
+            cratesObject.transform.GetChild(i).gameObject.SetActive(true);
+        }
+
         var crates = GameObject.FindGameObjectsWithTag("Crate");
         for (int i = 0; i < crates.Length; ++i)
         {
@@ -145,6 +160,8 @@ public class GameManager : MonoBehaviour
             cratesHolder.Add(crate.Id, crate);
             _crate.SetActive(false);
         }
+
+        InvokeRepeating("UpdateCrateTimers", 0f, 60f);
     }
 
     protected bool UpdateGameState(PlayerPacket packet, OtherController oc)
@@ -185,6 +202,16 @@ public class GameManager : MonoBehaviour
     void RemoveExportTimer(object sender, Crate crate)
     {
 
+    }
+
+    protected ActionType DetermineAction(Crate myCrate, Crate crate, AccessCode access)
+    {
+        // TODO: Use crates for skill checking?
+        if (myCrate.Drugs > 0 && access == AccessCode.Robs) return ActionType.StoreDrugs;
+        if (myCrate.Drugs == 0 && access == AccessCode.Robs) return ActionType.GetDrugs;
+        if (myCrate.Evidence > 0 && access == AccessCode.Cops) return ActionType.StoreEvidence;
+        if (myCrate.Evidence == 0 && access == AccessCode.Cops) return ActionType.GetEvidence;
+        return ActionType.Null;
     }
 }
 

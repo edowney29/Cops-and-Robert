@@ -596,7 +596,7 @@ MonoBehaviour:
   runSpeed: 4
   rotateSpeed: 2
   mount: 0
-  mountType: 1
+  mountType: 0
   mountedState: 0
   mountedSpeed: 1.6
   flyingSpeed: 2.5

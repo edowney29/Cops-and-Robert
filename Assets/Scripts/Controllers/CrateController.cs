@@ -4,6 +4,13 @@ public class CrateController : MonoBehaviour
 {
     public Crate Crate { get; private set; }
     public bool inTrigger = false;
+    float destroyTimer = float.MinValue;
+
+    void Update()
+    {
+        destroyTimer += Time.deltaTime;
+        if (destroyTimer > 5f) gameObject.SetActive(false);
+    }
 
     void OnTriggerEnter(Collider other)
     {
@@ -34,5 +41,6 @@ public class CrateController : MonoBehaviour
     public void SetCrate(Crate crate)
     {
         Crate = crate;
+        destroyTimer = 0f;
     }
 }

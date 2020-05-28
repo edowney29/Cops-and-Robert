@@ -55,9 +55,9 @@ namespace Dissonance
         [SerializeField, UsedImplicitly] private bool _isMuted;
         [SerializeField, UsedImplicitly] private bool _isDeafened;
         [SerializeField, UsedImplicitly] private float _oneMinusBaseRemoteVoiceVolume;
-        #pragma warning disable 0649 //field not used
+#pragma warning disable 0649 //field not used
         [SerializeField, UsedImplicitly] private VoicePlayback _playbackPrefab;
-        #pragma warning restore 0649
+#pragma warning restore 0649
         [SerializeField, UsedImplicitly] private GameObject _playbackPrefab2;
         [SerializeField, UsedImplicitly] private string _micName;
         [SerializeField, UsedImplicitly] private ChannelPriority _playerPriority = ChannelPriority.Default;
@@ -127,11 +127,12 @@ namespace Dissonance
         {
             get { return _net != null && _net.Status == ConnectionStatus.Connected; }
         }
-        
+
         /// <summary>
         /// Get an object to control which rooms the local player is listening to
         /// </summary>
-        [NotNull] public Rooms Rooms
+        [NotNull]
+        public Rooms Rooms
         {
             get { return _rooms; }
         }
@@ -139,7 +140,8 @@ namespace Dissonance
         /// <summary>
         /// Get an object to control channels to other players
         /// </summary>
-        [NotNull] public PlayerChannels PlayerChannels
+        [NotNull]
+        public PlayerChannels PlayerChannels
         {
             get { return _playerChannels; }
         }
@@ -147,7 +149,8 @@ namespace Dissonance
         /// <summary>
         /// Get an object to control channels to rooms (transmitting)
         /// </summary>
-        [NotNull] public RoomChannels RoomChannels
+        [NotNull]
+        public RoomChannels RoomChannels
         {
             get { return _roomChannels; }
         }
@@ -155,7 +158,8 @@ namespace Dissonance
         /// <summary>
         /// Get an object to send and receive text messages
         /// </summary>
-        [NotNull] public TextChat Text
+        [NotNull]
+        public TextChat Text
         {
             get { return _text; }
         }
@@ -163,7 +167,8 @@ namespace Dissonance
         /// <summary>
         /// Get a list of states of all players in the Dissonance voice session
         /// </summary>
-        [NotNull] public ReadOnlyCollection<VoicePlayerState> Players
+        [NotNull]
+        public ReadOnlyCollection<VoicePlayerState> Players
         {
             get { return _players.Readonly; }
         }
@@ -179,7 +184,8 @@ namespace Dissonance
         /// <summary>
         /// Get the set of tokens the local player has knowledge of
         /// </summary>
-        [NotNull] public IEnumerable<string> Tokens
+        [NotNull]
+        public IEnumerable<string> Tokens
         {
             get { return _tokens; }
         }
@@ -196,7 +202,8 @@ namespace Dissonance
         /// <summary>
         /// Get or set the microphone device name to use for voice capture
         /// </summary>
-        [CanBeNull] public string MicrophoneName
+        [CanBeNull]
+        public string MicrophoneName
         {
             get { return _micName; }
             set
@@ -212,7 +219,8 @@ namespace Dissonance
         /// <summary>
         /// Get the microphone capture object. Will be null if Dissonance has not yet started.
         /// </summary>
-        [CanBeNull] public IMicrophoneCapture MicrophoneCapture
+        [CanBeNull]
+        public IMicrophoneCapture MicrophoneCapture
         {
             get { return _capture.Microphone; }
         }
@@ -313,7 +321,14 @@ namespace Dissonance
         }
         #endregion
 
-        [UsedImplicitly] private void Start()
+        [UsedImplicitly]
+        private void Awake()
+        {
+            this.enabled = false;
+        }
+
+        [UsedImplicitly]
+        private void Start()
         {
             // Unity is unreliable about late loading DLLs so try to load dependencies as early as possible.
             try
@@ -412,14 +427,16 @@ namespace Dissonance
             return mic;
         }
 
-        [UsedImplicitly] private void OnEnable()
+        [UsedImplicitly]
+        private void OnEnable()
         {
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.pauseStateChanged += OnEditorPauseChanged;
 #endif
         }
 
-        [UsedImplicitly] private void OnDisable()
+        [UsedImplicitly]
+        private void OnDisable()
         {
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.pauseStateChanged -= OnEditorPauseChanged;
@@ -589,7 +606,8 @@ namespace Dissonance
         /// </summary>
         /// <param name="playerId"></param>
         /// <returns></returns>
-        [CanBeNull] public VoicePlayerState FindPlayer([NotNull] string playerId)
+        [CanBeNull]
+        public VoicePlayerState FindPlayer([NotNull] string playerId)
         {
             if (playerId == null)
                 throw new ArgumentNullException("playerId");
@@ -601,7 +619,8 @@ namespace Dissonance
             return null;
         }
 
-        [UsedImplicitly] private void Update()
+        [UsedImplicitly]
+        private void Update()
         {
             Profiler.BeginSample("Write Multithreaded Logs", this);
             Logs.WriteMultithreadedLogs();
@@ -624,7 +643,8 @@ namespace Dissonance
             Profiler.EndSample();
         }
 
-        [UsedImplicitly] private void OnDestroy()
+        [UsedImplicitly]
+        private void OnDestroy()
         {
             _capture.Destroy();
         }

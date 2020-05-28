@@ -3,9 +3,11 @@ using UnityEngine;
 
 public class InterfaceManager : MonoBehaviour
 {
-    public GameObject menuPanel, locationPanel, startGameButton, cratesObject;
+    public GameObject menuPanel, locationPanel, settingsPanel, startGameButton;
     public TMP_InputField usernameInput, passwordInput;
     public TMP_Text locationText, drugsCountText, evidenceCountText, exportsCountText, roleNameText, timerText;
+
+    bool buttonPressed = false;
 
     public string RoomId { get; private set; }
     public string Username { get; private set; }
@@ -16,6 +18,19 @@ public class InterfaceManager : MonoBehaviour
         passwordInput.onValueChanged.AddListener(SetRoomId);
 
         locationPanel.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape) && !buttonPressed)
+        {
+            buttonPressed = true;
+            ToggleSettings();
+        }
+        else
+        {
+            buttonPressed = false;
+        }
     }
 
     void SetUsername(string username)
@@ -45,15 +60,20 @@ public class InterfaceManager : MonoBehaviour
         menuPanel.SetActive(false);
     }
 
+    public void ToggleSettings()
+    {
+        settingsPanel.SetActive(!settingsPanel.activeSelf);
+    }
+
     public void SetupIsServerView()
     {
         startGameButton.SetActive(true);
-        cratesObject.SetActive(true);
+        // cratesObject.SetActive(true);
     }
 
-    public void StartButtonText(bool isRunning)
+    public void StartButtonText(bool serverRunning)
     {
-        if (isRunning)
+        if (serverRunning)
         {
             startGameButton.GetComponentInChildren<TMP_Text>().SetText("Reset Game");
         }
@@ -100,5 +120,15 @@ public class InterfaceManager : MonoBehaviour
             else text = "Street Thug";
         }
         roleNameText.SetText(text);
+    }
+
+    public void ResetAll()
+    {
+        SetLocation("Proximity");
+        EvidenceText(0);
+        DrugsText(0);
+        ExportsText(0);
+        // RoleNameText("Role Name");
+        roleNameText.SetText("Role Name");
     }
 }
