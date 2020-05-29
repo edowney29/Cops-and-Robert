@@ -10,6 +10,7 @@ public class CrateController : MonoBehaviour
     {
         destroyTimer += Time.deltaTime;
         if (destroyTimer > 5f) gameObject.SetActive(false);
+        // if (destroyTimer > 5f) Destroy(gameObject);
     }
 
     void OnTriggerEnter(Collider other)

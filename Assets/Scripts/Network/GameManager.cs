@@ -33,14 +33,17 @@ public class GameManager : MonoBehaviour
         foreach (var crate in GameObject.FindGameObjectsWithTag("RobCrate"))
         {
             crate.SetActive(false);
+            // Destroy(crate.gameObject);
         }
         foreach (var crate in GameObject.FindGameObjectsWithTag("CopCrate"))
         {
             crate.SetActive(false);
+            // Destroy(crate.gameObject);
         }
         foreach (var crate in GameObject.FindGameObjectsWithTag("Crate"))
         {
             crate.SetActive(false);
+            // Destroy(crate.gameObject);
         }
         CancelInvoke("UpdateCrateTimers");
     }

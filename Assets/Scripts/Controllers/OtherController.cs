@@ -13,7 +13,8 @@ public class OtherController : MonoBehaviour
     void Update()
     {
         destroyTimer += Time.deltaTime;
-        if (destroyTimer > 5f) gameObject.SetActive(false);
+        // if (destroyTimer > 5f) gameObject.SetActive(false);
+        if (destroyTimer > 5f) Destroy(gameObject);
     }
 
     void FixedUpdate()

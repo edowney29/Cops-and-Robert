@@ -102,15 +102,12 @@ public class NetworkManager : GameManager
                     // Debug.Log("SERVER: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
                     voiceHolderServer.Add(packet);
                 }
-                else if (packet.IsServer || packet.IsP2P)
+                else //if (packet.IsServer || packet.IsP2P)
                 {
                     // Debug.Log("CLIENT: " + packet.Token + " - " + packet.IsServer + " - " + packet.IsP2P + " - " + comms.IsNetworkInitialized);
                     voiceHolderClient.Add(packet);
                 }
-                else
-                {
 
-                }
             }
             else if (packet.Type == PacketType.GameState)
             {
