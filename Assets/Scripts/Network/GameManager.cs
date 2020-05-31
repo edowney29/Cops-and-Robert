@@ -101,6 +101,7 @@ public class GameManager : MonoBehaviour
 
                 if (player.Access == AccessCode.Cops && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.DestroyEvidence);
                 if (player.Access == AccessCode.Robs && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.CreateEvidence);
+                // if (player.Access == AccessCode.Robs) player.UpdateCooldown(ActionType.InJail, 0f);
             }
         }
 
@@ -267,7 +268,7 @@ public class Crate
     public RoleCode Role { get; set; }
     public AccessCode Access { get; set; }
     List<float> ExportTimers = new List<float>();
-    Dictionary<ActionType, float> CooldownTimers = new Dictionary<ActionType, float>(); 
+    Dictionary<ActionType, float> CooldownTimers = new Dictionary<ActionType, float>();
 
     public void UpdateTransform(Transform transform)
     {
