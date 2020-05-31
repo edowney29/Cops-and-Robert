@@ -5,21 +5,20 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField]
     GameObject cratesObject;
-    float gameTimer = 0f, drugStashTimer = TimerValues.ExportTime;
+    float gameTimer = 0f;
     protected bool serverRunning = false;
     Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
     // Stack<float> warrantDrugs = new Stack<float>();
 
     void Update()
     {
-        var time = Time.deltaTime;
+        var timer = Time.deltaTime;
         if (serverRunning)
         {
-            gameTimer += time;
-            if (gameTimer > 1200f) drugStashTimer = TimerValues.ExportTime / 2f; // Overtime reduce drug timer
+            gameTimer += timer;
             foreach (var crate in cratesHolder.Values)
             {
-                crate.UpdateTimers(time);
+                crate.UpdateTimers(timer, gameTimer);
             }
         }
     }
@@ -107,7 +106,6 @@ public class GameManager : MonoBehaviour
 
         SetupCreates();
         gameTimer = 0f;
-        drugStashTimer = TimerValues.ExportTime; // Reset drug timer
         serverRunning = true;
     }
 
@@ -200,7 +198,7 @@ public class GameManager : MonoBehaviour
                 crate.Value.Drugs += 1;
             }
         }
-        yield return new WaitForSeconds(drugStashTimer);
+        yield return new WaitForSeconds(gameTimer < TimerValues.Overtime ? TimerValues.ExportTime : TimerValues.ExportTime / 2f);
     }
 
     protected ActionType DetermineAction(Crate myCrate, Crate crate, AccessCode access)
@@ -257,7 +255,7 @@ public class Crate
     public float RotX { get; set; }
     public float RotY { get; set; }
     public float RotZ { get; set; }
-    public float OvertimeScale { get; set; }
+    public float GameTimer { get; set; }
     public string Id { get; set; }
     public string Display { get; set; }
     public int Drugs { get; set; }
@@ -280,13 +278,13 @@ public class Crate
         RotZ = transform.rotation.eulerAngles.z;
     }
 
-    public void UpdateTimers(float addTime)
+    public void UpdateTimers(float addTime, float gameTimer)
     {
+        GameTimer = gameTimer;
         foreach (var key in CooldownTimers.Keys)
         {
             CooldownTimers[key] -= addTime;
         }
-
         for (int i = 0; i < ExportTimers.Count; ++i)
         {
             ExportTimers[i] += addTime;
@@ -369,7 +367,8 @@ public class Crate
         // Crate can create Warrant --- Player has no Warrant --- Crate is Cops
         if (action == ActionType.CreateWarrant && Evidence >= 3 && player.Warrants == 0 && player.Access == AccessCode.Cops && player.Role == RoleCode._1 && Access == AccessCode.Cops)
         {
-            Evidence -= 3;
+            if (GameTimer > TimerValues.Overtime && Evidence < 5) return false;
+            Evidence -= GameTimer > TimerValues.Overtime ? 5 : 3;
             player.Warrants += 1;
             return true;
         }
@@ -442,15 +441,18 @@ public class Crate
         return false;
     }
 
-    float RollJailTime(int max, float scale)
+    // TODO: figure out overtime
+    float RollJailTime(int max, float scale, bool overTime = false)
     {
         return Random.Range(1, max) * scale;
     }
 
-    float RollJailTimeAdvantage(int max, float scale)
+    float RollJailTimeAdvantage(int max, float scale, bool overTime = false)
     {
         float roll1 = RollJailTime(max, scale);
         float roll2 = RollJailTime(max, scale);
         return roll1 > roll2 ? roll1 : roll2;
+        // var roll = roll1 > roll2 ? roll1 : roll2;
+        // if (overTime) roll = roll * (overTime ? 1.5f : 1f);
     }
 }

@@ -1,6 +1,7 @@
 ﻿public static class TimerValues
 {
     public static float ExportTime = 60f;
+    public static float Overtime = 1200f;
     public static float CooldownTime(ActionType action)
     {
         if (action == ActionType.UseJail4) return 30f;
