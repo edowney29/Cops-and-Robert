@@ -73,20 +73,15 @@ public class NetworkManager : GameManager
             PlayerPacket packet = JsonConvert.DeserializeObject<PlayerPacket>(json);
             Debug.Log("[PACKET]: " + packet.Type + " --- " + packet.Token + " --- " + packet.IsServer);
             if (packet.IsServer) ServerToken = packet.Token;
-            if (Token == null)
-            {
-                Token = packet.Token;
-                if (packet.IsServer) GUI.SetupIsServerView();
-                SpawnPlayer();
-            }
 
-            IsServer = Token.Equals(ServerToken);
             if (packet.Type == PacketType.Player)
             {
                 if (Token.Equals(packet.Token)) return;
                 if (otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
                     if (oc.isActiveAndEnabled) oc.UpdateTransform(packet);
+                    else oc.gameObject.SetActive(true);
+                    // TODO: Validate position based on gamestate
                 }
                 else
                 {
@@ -169,12 +164,21 @@ public class NetworkManager : GameManager
             {
                 if (IsServer && otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    if (oc.isActiveAndEnabled) UpdateGameState(packet, oc);
+                    if (oc.isActiveAndEnabled) UpdateGameState(packet, oc);                    
                 }
             }
             else
             {
-                Debug.LogWarning("Server Message");
+                if (Token == null)
+                {
+                    Token = packet.Token;
+                    if (packet.IsServer)
+                    {
+                        IsServer = true;
+                        GUI.SetupIsServerView();
+                    }
+                    SpawnPlayer();
+                }
             }
         };
 

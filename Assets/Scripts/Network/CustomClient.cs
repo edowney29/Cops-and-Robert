@@ -76,7 +76,7 @@ public class CustomClient : BaseClient<CustomServer, CustomClient, CustomConn>
         // For when client is also server loopback
         if (networkManager.IsServer)
         {
-            string json = Newtonsoft.Json.JsonConvert.SerializeObject(new VoiceJson(networkManager.ServerToken, data, isP2P));
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(new VoiceJson("", data, isP2P));
             PlayerPacket packet = Newtonsoft.Json.JsonConvert.DeserializeObject<PlayerPacket>(json);
             networkManager.voiceHolderServer.Add(packet);
         }

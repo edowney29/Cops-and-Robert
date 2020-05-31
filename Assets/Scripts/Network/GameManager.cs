@@ -5,9 +5,10 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField]
     GameObject cratesObject;
-    float gameTimer = 0f;
+    float gameTimer = 0f, drugStashTimer = TimerValues.ExportTime;
     protected bool serverRunning = false;
     Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
+    // Stack<float> warrantDrugs = new Stack<float>();
 
     void Update()
     {
@@ -15,9 +16,10 @@ public class GameManager : MonoBehaviour
         if (serverRunning)
         {
             gameTimer += time;
+            if (gameTimer > 1200f) drugStashTimer = TimerValues.ExportTime / 2f; // Overtime reduce drug timer
             foreach (var crate in cratesHolder.Values)
             {
-                if (crate.IsExport) crate.UpdateTimers(time);
+                crate.UpdateTimers(time);
             }
         }
     }
@@ -45,7 +47,7 @@ public class GameManager : MonoBehaviour
             crate.SetActive(false);
             // Destroy(crate.gameObject);
         }
-        CancelInvoke("UpdateCrateTimers");
+        StopCoroutine("UpdateCrateTimers");
     }
 
     protected void SetupGameState(Dictionary<string, OtherController> players, string token)
@@ -64,11 +66,14 @@ public class GameManager : MonoBehaviour
         int index = 0;
         foreach (var player in players)
         {
-            Crate crate = new Crate();
-            crate.Id = player.Key;
-            crate.Display = displayNames[++index];
-            cratesHolder.Add(player.Key, crate);
-            playerList.Add(player.Key);
+            if (player.Value.isActiveAndEnabled)
+            {
+                Crate crate = new Crate();
+                crate.Id = player.Key;
+                crate.Display = displayNames[++index];
+                cratesHolder.Add(player.Key, crate);
+                playerList.Add(player.Key);
+            }
         }
 
         for (int i = 0; i < playerList.Count; ++i)
@@ -89,15 +94,19 @@ public class GameManager : MonoBehaviour
 
                 if (i == 0 || i == 1) player.Role = RoleCode._1;
                 else if (i == 2 || i == 3) player.Role = RoleCode._2;
-                // else if (i == 4 || i == 5) player.Role = RoleCode._3;
-                // else if ((i == 6 || i == 7) && playerList.Count >= 8) player.Role = RoleCode._4;
-                // else if ((i == 8 || i == 9) && playerList.Count >= 10) player.Role = rolePercent > 0.5 ? RoleCode._5 : RoleCode._6;
+                else if (i == 4 || i == 5) player.Role = RoleCode._3;
+                else if ((i == 6 || i == 7) && playerList.Count >= 8) player.Role = RoleCode._4;
+                else if ((i == 8 || i == 9) && playerList.Count >= 10) player.Role = rolePercent > 0.5 ? RoleCode._5 : RoleCode._6;
                 else player.Role = RoleCode._2;
+
+                if (player.Access == AccessCode.Cops && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.DestroyEvidence);
+                if (player.Access == AccessCode.Robs && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.CreateEvidence);
             }
         }
 
         SetupCreates();
         gameTimer = 0f;
+        drugStashTimer = TimerValues.ExportTime; // Reset drug timer
         serverRunning = true;
     }
 
@@ -116,10 +125,10 @@ public class GameManager : MonoBehaviour
             crates[i] = crates[rng];
             crates[rng] = tmp;
         }
+
         int index = 0;
         foreach (var _crate in crates)
         {
-            // var cc = _crate.GetComponent<CrateController>();
             Crate crate = new Crate();
             crate.Id = System.Guid.NewGuid().ToString();
             crate.Display = "Crate";
@@ -128,12 +137,9 @@ public class GameManager : MonoBehaviour
             if (index == 0)
             {
                 crate.IsExport = true;
-                // crate.AddExportTimer += AddExportTimer;
-                // crate.RemoveExportTimer += RemoveExportTimer;
                 crate.Display = "Exports";
             }
             cratesHolder.Add(crate.Id, crate);
-            // cc.SetCrate(crate);
             _crate.SetActive(false);
             index += 1;
         }
@@ -141,7 +147,6 @@ public class GameManager : MonoBehaviour
         var rcrates = GameObject.FindGameObjectsWithTag("RobCrate");
         foreach (var _crate in rcrates)
         {
-            // var cc = _crate.GetComponent<CrateController>();
             Crate crate = new Crate();
             crate.Id = System.Guid.NewGuid().ToString();
             crate.Display = "Drug Stash";
@@ -154,7 +159,6 @@ public class GameManager : MonoBehaviour
         var ccrates = GameObject.FindGameObjectsWithTag("CopCrate");
         foreach (var _crate in ccrates)
         {
-            // var cc = _crate.GetComponent<CrateController>();
             Crate crate = new Crate();
             crate.Id = System.Guid.NewGuid().ToString();
             crate.Display = "Police Locker";
@@ -164,7 +168,7 @@ public class GameManager : MonoBehaviour
             _crate.SetActive(false);
         }
 
-        InvokeRepeating("UpdateCrateTimers", 0f, 60f);
+        StartCoroutine("UpdateCrateTimers");
     }
 
     protected bool UpdateGameState(PlayerPacket packet, OtherController oc)
@@ -185,7 +189,7 @@ public class GameManager : MonoBehaviour
         return false;
     }
 
-    void UpdateCrateTimers()
+    System.Collections.IEnumerator UpdateCrateTimers()
     {
         foreach (var crate in cratesHolder)
         {
@@ -195,16 +199,7 @@ public class GameManager : MonoBehaviour
                 crate.Value.Drugs += 1;
             }
         }
-    }
-
-    void AddExportTimer(object sender, Crate crate)
-    {
-
-    }
-
-    void RemoveExportTimer(object sender, Crate crate)
-    {
-
+        yield return new WaitForSeconds(drugStashTimer);
     }
 
     protected ActionType DetermineAction(Crate myCrate, Crate crate, AccessCode access)
@@ -247,7 +242,10 @@ public enum ActionType
     DestroyEvidence,
     CreateWarrant,
     UseWarrant,
-    UseJail,
+    UseJail4,
+    UseJail5,
+    UseJail6,
+    InJail
 }
 
 public class Crate
@@ -258,18 +256,18 @@ public class Crate
     public float RotX { get; set; }
     public float RotY { get; set; }
     public float RotZ { get; set; }
+    public float OvertimeScale { get; set; }
     public string Id { get; set; }
     public string Display { get; set; }
     public int Drugs { get; set; }
     public int Evidence { get; set; }
+    public int Warrants { get; set; }
     public int Score { get; set; }
     public bool IsExport { get; set; }
     public RoleCode Role { get; set; }
     public AccessCode Access { get; set; }
-    List<float> Timers = new List<float>();
-
-    // public event System.EventHandler<Crate> AddExportTimer;
-    // public event System.EventHandler<Crate> RemoveExportTimer;
+    List<float> ExportTimers = new List<float>();
+    Dictionary<ActionType, float> CooldownTimers = new Dictionary<ActionType, float>(); 
 
     public void UpdateTransform(Transform transform)
     {
@@ -283,11 +281,21 @@ public class Crate
 
     public void UpdateTimers(float addTime)
     {
-        for (int i = 0; i < Timers.Count; ++i)
+        foreach (var key in CooldownTimers.Keys)
         {
-            Timers[i] += addTime;
+            CooldownTimers[key] -= addTime;
         }
-        Timers.RemoveAll(timer => ScoreDrug(timer));
+
+        for (int i = 0; i < ExportTimers.Count; ++i)
+        {
+            ExportTimers[i] += addTime;
+        }
+        ExportTimers.RemoveAll(timer => ScoreDrug(timer));
+    }
+
+    public void UpdateCooldown(ActionType action, float time = 0f)
+    {
+        CooldownTimers.Add(action, time == 0f ? TimerValues.CooldownTime(action) : time);
     }
 
     public bool CanRole1View(Crate player)
@@ -297,7 +305,7 @@ public class Crate
 
     public bool ScoreDrug(float timer)
     {
-        if (Drugs > 0 && timer > 60f)
+        if (Drugs > 0 && timer > TimerValues.ExportTime)
         {
             Drugs -= 1;
             Score += 1;
@@ -315,7 +323,7 @@ public class Crate
             Drugs -= 1;
             player.Drugs += 1;
             // if (IsExport) RemoveExportTimer?.Invoke(this, this);
-            if (IsExport) Timers.RemoveAt(Timers.Count - 1);
+            if (IsExport) ExportTimers.RemoveAt(ExportTimers.Count - 1);
             return true;
         }
 
@@ -335,8 +343,7 @@ public class Crate
             if (Access == AccessCode.Robs) Evidence = 0; // Rob Crate has no Evidence
             if (Access == AccessCode.Null && Evidence > 1) Evidence = 1; // Normal Crate max 1 Evidence
 
-            // if (IsExport) AddExportTimer?.Invoke(this, this);
-            if (IsExport) Timers.Add(0f);
+            if (IsExport) ExportTimers.Add(0f);
             return true;
         }
 
@@ -358,25 +365,26 @@ public class Crate
             return true;
         }
 
-        // Crate can hold more Evidence --- Player has Evidence
-        if (action == ActionType.CreateWarrant && Evidence >= 7 && (player.Access == AccessCode.Cops || player.Role == RoleCode._3 || player.Role == RoleCode._4))
+        // Crate can create Warrant --- Player has no Warrant --- Crate is Cops
+        if (action == ActionType.CreateWarrant && Evidence >= 3 && player.Warrants == 0 && player.Access == AccessCode.Cops && player.Role == RoleCode._1 && Access == AccessCode.Cops)
         {
-            if (Access == AccessCode.Null && Evidence > 0) return false; // Normal Crate max 1 Evidence --- CANCEL ACTION
-            if (Access == AccessCode.Robs) return false; // Rob Crate can't hold Evidence --- CANCEL ACTION
-            Evidence += 1;
-            player.Evidence -= 1;
+            Evidence -= 3;
+            player.Warrants += 1;
             return true;
         }
 
         return false;
     }
 
-    public bool DoSkill(ActionType action)
+    public bool DoActionSelf(ActionType action)
     {
+        if (CooldownTimers[action] > 0f) return false; // Cooldown not ready
+
         // Player has no Evidence --- Player can create Evidence
         if (action == ActionType.CreateEvidence && Evidence == 0 && Access == AccessCode.Robs && Role == RoleCode._3)
         {
             Evidence += 1;
+            CooldownTimers[action] = TimerValues.CooldownTime(action);
             return true;
         }
 
@@ -384,9 +392,64 @@ public class Crate
         if (action == ActionType.DestroyEvidence && Evidence > 0 && Access == AccessCode.Cops && Role == RoleCode._3)
         {
             Evidence -= 1;
+            CooldownTimers[action] = TimerValues.CooldownTime(action);
             return true;
         }
 
         return false;
+    }
+
+    public bool DoActionOther(ActionType action, Crate player, Crate otherPlayer)
+    {
+        // Crate can send to Jail
+        if (action == ActionType.UseJail4 && Evidence >= 4 && player.Access == AccessCode.Cops)
+        {
+            if (Access != AccessCode.Cops) return false; // Ensure Cops crate --- CANCEL ACTION
+            Evidence -= 4;
+            otherPlayer.CooldownTimers[ActionType.InJail] = RollJailTime(10, TimerValues.CooldownTime(action));
+            return true;
+        }
+
+        // Crate can send to Jail
+        if (action == ActionType.UseJail5 && Evidence >= 5 && player.Access == AccessCode.Cops)
+        {
+            if (Access != AccessCode.Cops) return false; // Ensure Cops crate --- CANCEL ACTION
+            Evidence -= 5;
+            otherPlayer.CooldownTimers[ActionType.InJail] = RollJailTime(10, TimerValues.CooldownTime(action));
+            return true;
+        }
+
+        // Crate can send to Jail
+        if (action == ActionType.UseJail6 && Evidence >= 6 && player.Access == AccessCode.Cops)
+        {
+            if (Access != AccessCode.Cops) return false; // Ensure Cops crate --- CANCEL ACTION
+            Evidence -= 6;
+            otherPlayer.CooldownTimers[ActionType.InJail] = RollJailTime(10, TimerValues.CooldownTime(action));
+            return true;
+        }
+
+        // Crate use Warrant --- Player has Warrant -- Cops crate is otherPlayer
+        if (action == ActionType.UseWarrant && player.Warrants > 0 && otherPlayer.Access == AccessCode.Cops && otherPlayer.Role == RoleCode.Null)
+        {
+            var drugs = Drugs;
+            Drugs = 0;
+            player.Warrants -= 1;
+            otherPlayer.Drugs += drugs;
+            return true;
+        }
+
+        return false;
+    }
+
+    float RollJailTime(int max, float scale)
+    {
+        return Random.Range(1, max) * scale;
+    }
+
+    float RollJailTimeAdvantage(int max, float scale)
+    {
+        float roll1 = RollJailTime(max, scale);
+        float roll2 = RollJailTime(max, scale);
+        return roll1 > roll2 ? roll1 : roll2;
     }
 }

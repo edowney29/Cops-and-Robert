@@ -27,7 +27,7 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
             {
                 // HLAPI is server and client, so run as a non-dedicated
                 // host (passing in the correct parameters)
-                if (server && client)
+                if (server)
                     RunAsHost(Unit.None, Unit.None);
 
                 // HLAPI is just a server, so run as a dedicated host
@@ -35,7 +35,7 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
                 //     RunAsDedicatedServer(Unit.None);
 
                 // HLAPI is just a client, so run as a client
-                else if (client)
+                else //if (client)
                     RunAsClient(Unit.None);
             }
         }
@@ -44,7 +44,6 @@ public class CustomCommsNetwork : BaseCommsNetwork<CustomServer, CustomClient, C
             //Network is not active, make sure Dissonance is not active
             Stop();
         }
-
 
         base.Update();
     }
