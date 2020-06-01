@@ -8,7 +8,6 @@ public class GameManager : MonoBehaviour
     float gameTimer = 0f;
     protected bool serverRunning = false;
     Dictionary<string, Crate> cratesHolder = new Dictionary<string, Crate>();
-    // Stack<float> warrantDrugs = new Stack<float>();
 
     void Update()
     {
@@ -16,9 +15,10 @@ public class GameManager : MonoBehaviour
         if (serverRunning)
         {
             gameTimer += timer;
+            bool isOvertime = gameTimer > 1200f;
             foreach (var crate in cratesHolder.Values)
             {
-                crate.UpdateTimers(timer, gameTimer);
+                crate.UpdateTimers(timer, gameTimer, isOvertime);
             }
         }
     }
@@ -52,24 +52,24 @@ public class GameManager : MonoBehaviour
     protected void SetupGameState(Dictionary<string, OtherController> players, string token)
     {
         cratesHolder.Clear();
-        string[] displayNames = new PlayerNames().Names;
+        // string[] displayNames = new PlayerNames().Names;
 
         Crate _crate = new Crate();
         _crate.Id = token;
-        _crate.Display = displayNames[0];
+        // _crate.Display = displayNames[0];
         cratesHolder.Add(token, _crate);
 
         List<string> playerList = new List<string>();
         playerList.Add(token);
 
-        int index = 0;
+        // int index = 0;
         foreach (var player in players)
         {
             if (player.Value.isActiveAndEnabled)
             {
                 Crate crate = new Crate();
                 crate.Id = player.Key;
-                crate.Display = displayNames[++index];
+                // crate.Display = displayNames[++index];
                 cratesHolder.Add(player.Key, crate);
                 playerList.Add(player.Key);
             }
@@ -255,7 +255,6 @@ public class Crate
     public float RotX { get; set; }
     public float RotY { get; set; }
     public float RotZ { get; set; }
-    public float GameTimer { get; set; }
     public string Id { get; set; }
     public string Display { get; set; }
     public int Drugs { get; set; }
@@ -263,6 +262,7 @@ public class Crate
     public int Warrants { get; set; }
     public int Score { get; set; }
     public bool IsExport { get; set; }
+    public bool IsOvertime { get; set; }
     public RoleCode Role { get; set; }
     public AccessCode Access { get; set; }
     List<float> ExportTimers = new List<float>();
@@ -278,9 +278,9 @@ public class Crate
         RotZ = transform.rotation.eulerAngles.z;
     }
 
-    public void UpdateTimers(float addTime, float gameTimer)
+    public void UpdateTimers(float addTime, float gameTimer, bool isOvertime)
     {
-        GameTimer = gameTimer;
+        IsOvertime = isOvertime;
         foreach (var key in CooldownTimers.Keys)
         {
             CooldownTimers[key] -= addTime;
@@ -297,10 +297,10 @@ public class Crate
         CooldownTimers.Add(action, time == 0f ? TimerValues.CooldownTime(action) : time);
     }
 
-    public bool CanRole1View(Crate player)
-    {
-        return Access == player.Access && (Role == RoleCode._2 || Role == RoleCode._3);
-    }
+    // public bool CanRole1View(Crate player)
+    // {
+    //     return Access == player.Access && (Role == RoleCode._2 || Role == RoleCode._3);
+    // }
 
     public bool ScoreDrug(float timer)
     {
@@ -367,8 +367,8 @@ public class Crate
         // Crate can create Warrant --- Player has no Warrant --- Crate is Cops
         if (action == ActionType.CreateWarrant && Evidence >= 3 && player.Warrants == 0 && player.Access == AccessCode.Cops && player.Role == RoleCode._1 && Access == AccessCode.Cops)
         {
-            if (GameTimer > TimerValues.Overtime && Evidence < 5) return false;
-            Evidence -= GameTimer > TimerValues.Overtime ? 5 : 3;
+            if (IsOvertime && Evidence < 5) return false;
+            Evidence -= IsOvertime ? 5 : 3;
             player.Warrants += 1;
             return true;
         }

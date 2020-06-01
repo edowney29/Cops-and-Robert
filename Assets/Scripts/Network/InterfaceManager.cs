@@ -17,7 +17,9 @@ public class InterfaceManager : MonoBehaviour
         usernameInput.onValueChanged.AddListener(SetUsername);
         passwordInput.onValueChanged.AddListener(SetRoomId);
 
+        settingsPanel.SetActive(false);
         locationPanel.SetActive(false);
+        menuPanel.SetActive(true);
     }
 
     void Update()
