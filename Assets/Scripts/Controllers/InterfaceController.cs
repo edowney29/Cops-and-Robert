@@ -1,7 +1,7 @@
 ﻿using TMPro;
 using UnityEngine;
 
-public class InterfaceManager : MonoBehaviour
+public class InterfaceController : MonoBehaviour
 {
     public GameObject menuPanel, locationPanel, settingsPanel, startGameButton;
     public TMP_InputField usernameInput, passwordInput;

@@ -6,6 +6,8 @@ public class CratePopup : MonoBehaviour
     TMPro.TMP_Text display, drugs, evidence;
     [SerializeField]
     UnityEngine.UI.Image image;
+    [SerializeField]
+    UnityEngine.UI.Button skillCreate, skillDestroy;
 
     bool buttonPressed = false;
 
@@ -74,5 +76,5 @@ public class CratePopup : MonoBehaviour
                 evidence.enabled = false;
             }
         }
-    }
+    }    
 }

@@ -17,7 +17,7 @@ public class NetworkManager : GameManager
     public List<PlayerPacket> voiceHolderServer = new List<PlayerPacket>();
 
     string Token { get; set; }
-    InterfaceManager GUI { get; set; }
+    InterfaceController GUI { get; set; }
     Dissonance.DissonanceComms Comms { get; set; }
     public Crate MyCrate { get; private set; }
     public WebSocket WebSocket { get; private set; }
@@ -26,7 +26,12 @@ public class NetworkManager : GameManager
 
     void Start()
     {
-        GUI = GetComponent<InterfaceManager>();
+        if (SteamManager.Initialized)
+        {
+            playerJson.Username = Steamworks.SteamFriends.GetPersonaName();
+        }
+
+        GUI = GetComponent<InterfaceController>();
         Comms = GetComponent<Dissonance.DissonanceComms>();
 
         InvokeRepeating("SendPlayerJson", 0f, 0.33333334f);
@@ -164,7 +169,7 @@ public class NetworkManager : GameManager
             {
                 if (IsServer && otherPlayers.TryGetValue(packet.Token, out OtherController oc))
                 {
-                    if (oc.isActiveAndEnabled) UpdateGameState(packet, oc);                    
+                    if (oc.isActiveAndEnabled) UpdateGameState(packet, oc);
                 }
             }
             else
@@ -274,6 +279,7 @@ public enum PacketType
 public class PlayerJson
 {
     public PacketType Type { get; set; }
+    public string Username { get; set; }
     public float PosX { get; set; }
     public float PosY { get; set; }
     public float PosZ { get; set; }

@@ -7,13 +7,13 @@ public class RoomSetter : MonoBehaviour
 
     // NetworkManager networkManager;
     Dissonance.DissonanceComms comms;
-    InterfaceManager gui;
+    InterfaceController gui;
 
     void Start()
     {
         // networkManager = FindObjectOfType<NetworkManager>();
         comms = FindObjectOfType<Dissonance.DissonanceComms>();
-        gui = FindObjectOfType<InterfaceManager>();
+        gui = FindObjectOfType<InterfaceController>();
     }
 
     private void OnTriggerEnter(Collider other)
