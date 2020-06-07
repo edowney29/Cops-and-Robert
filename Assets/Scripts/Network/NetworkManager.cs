@@ -6,7 +6,7 @@ using UnityEngine;
 public class NetworkManager : GameManager
 {
     [SerializeField]
-    GameObject player, prefabOtherPlayer, prefabCrate, prefabCopCrate, prefabRobCrate, prefabCratePopup; // prefabPlayer
+    GameObject player, prefabOtherPlayer, prefabCrate, prefabCopCrate, prefabRobCrate, prefabCratePopup, prefabCopCratePopup, modelCop1, modelCop2, modelRob1, modelRob2; // prefabPlayer
     [SerializeField]
     Material blueVisor, redVisor;
 
@@ -16,9 +16,9 @@ public class NetworkManager : GameManager
     public List<PlayerPacket> voiceHolderClient = new List<PlayerPacket>();
     public List<PlayerPacket> voiceHolderServer = new List<PlayerPacket>();
 
-    string Token { get; set; }
-    InterfaceController GUI { get; set; }
-    Dissonance.DissonanceComms Comms { get; set; }
+    public string Token { get; private set; }
+    public Dissonance.DissonanceComms Comms { get; private set; }
+    public InterfaceController GUI { get; private set; }
     public Crate MyCrate { get; private set; }
     public WebSocket WebSocket { get; private set; }
     public string ServerToken { get; private set; }
@@ -40,7 +40,7 @@ public class NetworkManager : GameManager
 
     public async void JoinGame()
     {
-        WebSocket = new WebSocket("ws://cops-and-robert-server.herokuapp.com/ws/" + GUI.RoomId);
+        WebSocket = new WebSocket("ws://cops-and-robert.herokuapp.com/ws/" + GUI.RoomId);
 
         WebSocket.OnOpen += () =>
         {
@@ -52,7 +52,7 @@ public class NetworkManager : GameManager
         WebSocket.OnError += (e) =>
         {
             Debug.LogError("Error! " + e);
-
+            WebSocket.Close();
         };
 
         WebSocket.OnClose += (e) =>
@@ -65,6 +65,7 @@ public class NetworkManager : GameManager
             // Destroy(Camera.main.gameObject);
             player.SetActive(false);
             // Camera.main.gameObject.SetActive(false);
+            GUI.SetIsRunning(false);
             GUI.ShowMenu();
         };
 
@@ -121,6 +122,7 @@ public class NetworkManager : GameManager
                         MyCrate = crate;
                         GUI.DrugsText(crate.Drugs);
                         GUI.EvidenceText(crate.Evidence);
+                        GUI.WarrantsText(crate.Warrants);
                         GUI.RoleNameText(crate.Access, crate.Role);
                         var meshes = player.GetComponentsInChildren<MeshRenderer>();
                         meshes[meshes.Length - 1].material = crate.Access == AccessCode.Cops ? blueVisor : redVisor;
@@ -147,15 +149,28 @@ public class NetworkManager : GameManager
                         }
                         else
                         {
-                            GameObject prefab;
-                            if (crate.Access == AccessCode.Cops) prefab = prefabCopCrate;
-                            else if (crate.Access == AccessCode.Robs) prefab = prefabRobCrate;
-                            else prefab = prefabCrate;
+                            GameObject prefab, prefabPopup;
+                            if (crate.Access == AccessCode.Cops)
+                            {
+                                prefab = prefabCopCrate;
+                                prefabPopup = prefabCopCratePopup;
+                            }
+                            else if (crate.Access == AccessCode.Robs)
+                            {
+                                prefab = prefabRobCrate;
+                                prefabPopup = prefabCratePopup;
+                            }
+                            else
+                            {
+                                prefab = prefabCrate;
+                                prefabPopup = prefabCratePopup;
+                            }
+
                             GameObject obj = Instantiate(prefab, new Vector3(crate.PosX, crate.PosY, crate.PosZ), Quaternion.Euler(crate.RotX, crate.RotY, crate.RotZ));
                             var crateController = obj.GetComponent<CrateController>();
                             crateController.SetCrate(crate);
 
-                            GameObject popup = Instantiate(prefabCratePopup, GUI.locationPanel.transform);
+                            GameObject popup = Instantiate(prefabPopup, GUI.locationPanel.transform);
                             var cratePopup = popup.GetComponent<CratePopup>();
                             cratePopup.crateController = crateController;
                             cratePopup.networkManager = this;
@@ -182,6 +197,7 @@ public class NetworkManager : GameManager
                         IsServer = true;
                         GUI.SetupIsServerView();
                     }
+                    GUI.SetIsRunning(true);
                     SpawnPlayer();
                 }
             }
@@ -250,18 +266,15 @@ public class NetworkManager : GameManager
         await WebSocket.SendText(json);
     }
 
-    public void ValidateAction(CrateController cc, AccessCode access)
+    public void ValidateAction(Crate crate, InputType input)
     {
         if (MyCrate != null)
         {
-            var action = DetermineAction(MyCrate, cc.Crate, access);
-            if (IsServer)
+            var action = DetermineAction(MyCrate, input);
+            if (action != ActionType.Null)
             {
-                UpdateGameStateServer(MyCrate.Id, cc.Crate.Id, action);
-            }
-            else
-            {
-                SendActionJson(action, cc.Crate.Id);
+                if (IsServer) UpdateGameStateServer(MyCrate.Id, crate.Id, action);
+                else SendActionJson(action, crate.Id);
             }
         }
     }

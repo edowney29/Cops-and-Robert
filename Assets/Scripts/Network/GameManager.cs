@@ -98,8 +98,8 @@ public class GameManager : MonoBehaviour
                 else if ((i == 8 || i == 9) && playerList.Count >= 10) player.Role = rolePercent > 0.5 ? RoleCode._5 : RoleCode._6;
                 else player.Role = RoleCode._2;
 
-                if (player.Access == AccessCode.Cops && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.DestroyEvidence);
-                if (player.Access == AccessCode.Robs && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.CreateEvidence);
+                // if (player.Access == AccessCode.Cops && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.DestroyEvidence);
+                // if (player.Access == AccessCode.Robs && player.Role == RoleCode._3) player.UpdateCooldown(ActionType.CreateEvidence);
                 // if (player.Access == AccessCode.Robs) player.UpdateCooldown(ActionType.InJail, 0f);
             }
         }
@@ -201,13 +201,31 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(gameTimer < TimerValues.Overtime ? TimerValues.ExportTime : TimerValues.ExportTime / 2f);
     }
 
-    protected ActionType DetermineAction(Crate myCrate, Crate crate, AccessCode access)
+    protected ActionType DetermineAction(Crate myCrate, InputType input)
     {
-        // TODO: Use crates for skill checking?
-        if (myCrate.Drugs > 0 && access == AccessCode.Robs) return ActionType.StoreDrugs;
-        if (myCrate.Drugs == 0 && access == AccessCode.Robs) return ActionType.GetDrugs;
-        if (myCrate.Evidence > 0 && access == AccessCode.Cops) return ActionType.StoreEvidence;
-        if (myCrate.Evidence == 0 && access == AccessCode.Cops) return ActionType.GetEvidence;
+        // if (input == InputType.CreateEvidence) return ActionType.CreateEvidence;
+        // if (input == InputType.DestroyEvidence) return ActionType.DestroyEvidence;
+        if (input == InputType.CreateWarrant) return ActionType.CreateWarrant;
+        if (input == InputType.UseWarrant) return ActionType.UseWarrant;
+
+        if (input == InputType.F)
+        {
+            if (myCrate.Drugs > 0) return ActionType.StoreDrugs;
+            if (myCrate.Drugs == 0) return ActionType.GetDrugs;
+        }
+
+        if (input == InputType.R)
+        {
+            if (myCrate.Evidence > 0) return ActionType.StoreEvidence;
+            if (myCrate.Evidence == 0) return ActionType.GetEvidence;
+        }
+
+        if (input == InputType.C)
+        {
+            if (myCrate.Warrants > 0) return ActionType.StoreWarrant;
+            if (myCrate.Warrants == 0) return ActionType.GetWarrant;
+        }
+
         return ActionType.Null;
     }
 }
@@ -239,12 +257,26 @@ public enum ActionType
     StoreEvidence,
     CreateEvidence,
     DestroyEvidence,
+    GetWarrant,
+    StoreWarrant,
     CreateWarrant,
     UseWarrant,
     UseJail4,
     UseJail5,
     UseJail6,
     InJail
+}
+
+public enum InputType
+{
+    NULL,
+    R,
+    F,
+    C,
+    CreateWarrant,
+    UseWarrant,
+    // CreateEvidence,
+    // DestroyEvidence
 }
 
 public class Crate
@@ -292,10 +324,10 @@ public class Crate
         ExportTimers.RemoveAll(timer => ScoreDrug(timer));
     }
 
-    public void UpdateCooldown(ActionType action, float time = 0f)
-    {
-        CooldownTimers.Add(action, time == 0f ? TimerValues.CooldownTime(action) : time);
-    }
+    // public void UpdateCooldown(ActionType action, float time = 0f)
+    // {
+    //     CooldownTimers.Add(action, time == 0f ? TimerValues.CooldownTime(action) : time);
+    // }
 
     // public bool CanRole1View(Crate player)
     // {
@@ -326,8 +358,8 @@ public class Crate
             return true;
         }
 
-        // Crate can hold more Drugs --- Player has Drugs
-        if (action == ActionType.StoreDrugs && Drugs < 100 && player.Drugs > 0 && (player.Access == AccessCode.Robs || player.Role == RoleCode._3 || player.Role == RoleCode._4))
+        // Crate can hold more Drugs --- Player has Drugs --- Any Role
+        if (action == ActionType.StoreDrugs && Drugs < 100 && player.Drugs > 0)
         {
             Drugs += 1;
             player.Drugs -= 1;
@@ -364,12 +396,37 @@ public class Crate
             return true;
         }
 
-        // Crate can create Warrant --- Player has no Warrant --- Crate is Cops
-        if (action == ActionType.CreateWarrant && Evidence >= 3 && player.Warrants == 0 && player.Access == AccessCode.Cops && player.Role == RoleCode._1 && Access == AccessCode.Cops)
+        // Crate has Warrants --- Player has no Warrant --- Crate is Cops
+        if (action == ActionType.GetWarrant && Warrants > 0 && player.Warrants == 0 && player.Access == AccessCode.Cops && Access == AccessCode.Cops)
+        {
+            Warrants -= 1;
+            player.Warrants += 1;
+            return true;
+        }
+
+        // Crate can store Warrants --- Player has a Warrant --- Crate is Cops
+        if (action == ActionType.StoreWarrant && Warrants < 100 && player.Warrants > 0 && player.Access == AccessCode.Cops && Access == AccessCode.Cops)
+        {
+            Warrants += 1;
+            player.Warrants -= 1;
+            return true;
+        }
+
+        // Crate can create Warrant --- Player is Role 1 --- Crate is Cops
+        if (action == ActionType.CreateWarrant && Evidence >= 3 && player.Access == AccessCode.Cops && player.Role == RoleCode._1 && Access == AccessCode.Cops)
         {
             if (IsOvertime && Evidence < 5) return false;
             Evidence -= IsOvertime ? 5 : 3;
-            player.Warrants += 1;
+            Warrants += 1;
+            return true;
+        }
+
+        // Player has a Warrant --- Crate is Normal
+        if (action == ActionType.UseWarrant && player.Warrants > 0 && player.Access == AccessCode.Cops && Access == AccessCode.Null)
+        {
+            player.Drugs += Drugs;
+            Drugs = 0;
+            player.Warrants -= 1;
             return true;
         }
 

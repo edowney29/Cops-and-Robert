@@ -5,9 +5,9 @@ public class InterfaceController : MonoBehaviour
 {
     public GameObject menuPanel, locationPanel, settingsPanel, startGameButton;
     public TMP_InputField usernameInput, passwordInput;
-    public TMP_Text locationText, drugsCountText, evidenceCountText, exportsCountText, roleNameText, timerText;
+    public TMP_Text locationText, drugsCountText, evidenceCountText, warrantsCountText, exportsCountText, roleNameText, timerText;
 
-    bool buttonPressed = false;
+    bool buttonPressed = false, isRunning = false;
 
     public string RoomId { get; private set; }
     public string Username { get; private set; }
@@ -24,7 +24,11 @@ public class InterfaceController : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape) && !buttonPressed)
+        if (!isRunning)
+        {
+            buttonPressed = false;
+        }
+        else if (Input.GetKeyDown(KeyCode.Escape) && !buttonPressed)
         {
             buttonPressed = true;
             ToggleSettings();
@@ -33,6 +37,11 @@ public class InterfaceController : MonoBehaviour
         {
             buttonPressed = false;
         }
+    }
+
+    public void SetIsRunning(bool value)
+    {
+        isRunning = value;
     }
 
     void SetUsername(string username)
@@ -70,7 +79,6 @@ public class InterfaceController : MonoBehaviour
     public void SetupIsServerView()
     {
         startGameButton.SetActive(true);
-        // cratesObject.SetActive(true);
     }
 
     public void StartButtonText(bool serverRunning)
@@ -93,6 +101,11 @@ public class InterfaceController : MonoBehaviour
     public void DrugsText(int count)
     {
         drugsCountText.SetText("Drugs: " + count);
+    }
+
+    public void WarrantsText(int count)
+    {
+        warrantsCountText.SetText("Warrants: " + count);
     }
 
     public void EvidenceText(int count)
@@ -129,8 +142,8 @@ public class InterfaceController : MonoBehaviour
         SetLocation("Proximity");
         EvidenceText(0);
         DrugsText(0);
+        WarrantsText(0);
         ExportsText(0);
-        // RoleNameText("Role Name");
         roleNameText.SetText("Role Name");
     }
 }
