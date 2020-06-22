@@ -5281,7 +5281,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cratesObject: {fileID: 643251487}
-  player: {fileID: 0}
+  player: {fileID: 991194704}
   prefabOtherPlayer: {fileID: 6764620993940803939, guid: b225550afe444964f987acfa5e203562,
     type: 3}
   prefabCrate: {fileID: 8176051827064793628, guid: f505b8ba3410e964d9e04189d59b7b4d,
@@ -5827,6 +5827,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 984639451}
   m_Mesh: {fileID: 4300004, guid: 3fe47bcef97348f4e8fbc0553a357aeb, type: 3}
+--- !u!1 &991194704 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8541834491983028079, guid: e46385242862e3f4385031adfff023ef,
+    type: 3}
+  m_PrefabInstance: {fileID: 1308033333}
+  m_PrefabAsset: {fileID: 0}
 --- !u!43 &997240914
 Mesh:
   m_ObjectHideFlags: 0
